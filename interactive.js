@@ -97,14 +97,14 @@ proto.renderGitFiles = function() {
 };
 
 proto.renderAddSuccess = function() {
-	this.eraseBelow()
+	this.eraseBelow();
+	process.stdout.clearLine();
+	process.stdout.write(ansi.cursorLeft);
 
 	var glob = this.input;
 	var files = this.getAllGitFiles(glob);
-	execSync('git add -- *' + glob + '*');
+	execSync('git add *' + glob + '* &> /dev/null');
 
-	console.log();
-	console.log();
 	console.log('Files added: ');
 	console.log(chalk.green(files));
 	console.log('----------------');
