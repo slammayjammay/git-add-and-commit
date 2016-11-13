@@ -38,9 +38,10 @@ proto.onReturn = function() {
 		this.getCommitMessage = true;
 		this.renderAddSuccess();
 
-		this.prompt = 'Commit message: ';
+		this.prompt = 'Commit message: ' + chalk.green('"');
 		this.input = '';
 		this.inputColor = 'green';
+
 		this.renderLine();
 	} else if (this.getCommitMessage) {
 		var message = this.input;
@@ -83,10 +84,17 @@ proto.run = function() {
 
 proto.renderLine = function() {
 	var string = this.prompt + this.colorInput(this.input);
+	if (this.getCommitMessage) {
+		string += chalk.green('"');
+	}
 
 	process.stdout.clearLine();
 	process.stdout.cursorTo(0);
 	process.stdout.write(string);
+
+	if (this.getCommitMessage) {
+		process.stdout.write(ansi.cursorMove(-1));
+	}
 };
 
 proto.renderGitFiles = function() {
