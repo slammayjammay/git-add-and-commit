@@ -7,6 +7,7 @@ var Interactive = function() {
 	this.input = '';
 	this.getGitFiles = true;
 	this.getCommitMessage = false;
+	this.inputColor = 'red';
 };
 
 var proto = Interactive.prototype;
@@ -37,12 +38,10 @@ proto.onReturn = function() {
 		this.getCommitMessage = true;
 		this.renderAddSuccess();
 
-		console.log('----------------');
-		console.log();
-
 		this.prompt = 'Commit message: ';
 		this.input = '';
-		this.renderLine(this.prompt);
+		this.inputColor = 'green';
+		this.renderLine();
 	} else if (this.getCommitMessage) {
 		var message = this.input;
 		execSync('git commit -m "' + message + '"');
@@ -61,23 +60,29 @@ proto.onBackspace = function() {
 	if (this.input.length !== 0) {
 		process.stdout.write(ansi.cursorMove(-1));
 	}
-	this.renderLine(this.prompt + chalk.red(this.input));
+	this.renderLine();
 };
 
 proto.onType = function(char, key) {
 	if (typeof char !== 'undefined') {
 		this.input += char + ''
 	}
-	this.renderLine(this.prompt + chalk.red(this.input));
+	this.renderLine();
+};
+
+proto.colorInput = function(input) {
+	return chalk[this.inputColor](input);
 };
 
 proto.run = function() {
-	this.renderLine(this.prompt);
+	this.renderLine();
 	let files = this.getAllGitFiles();
 	this.printBelow(files);
 };
 
-proto.renderLine = function(string) {
+proto.renderLine = function() {
+	var string = this.prompt + this.colorInput(this.input);
+
 	process.stdout.clearLine();
 	process.stdout.cursorTo(0);
 	process.stdout.write(string);
@@ -101,6 +106,8 @@ proto.renderAddSuccess = function() {
 	console.log();
 	console.log('Files added: ');
 	console.log(chalk.green(files));
+	console.log('----------------');
+	console.log();
 };
 
 proto.getAllGitFiles = function(glob) {
