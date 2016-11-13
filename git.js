@@ -10,10 +10,6 @@ process.stdin.resume();
 var PROMPT = 'Enter a file glob: ';
 var INPUT = [];
 
-function printGitStatus() {
-	var output = execSync('git -c color.ui=always status');
-}
-
 function renderLine() {
 	process.stdout.clearLine();
 	process.stdout.cursorTo(0);
@@ -39,7 +35,15 @@ function getAllGitFiles(glob) {
 	return files.toString('utf8');
 }
 
-function eraseLinesBelow() {
+function printBelow(files) {
+	process.stdout.write(ansi.cursorSavePosition);
+	console.log()
+	console.log()
+	console.log(chalk.red(files))
+	process.stdout.write(ansi.cursorRestorePosition);
+}
+
+function eraseBelow() {
 	process.stdout.write(ansi.eraseDown);
 }
 
@@ -57,28 +61,19 @@ process.stdin.on('keypress', function(char, key) {
 		renderLine();
 	}
 
-	process.stdout.write(ansi.cursorSavePosition);
+	eraseBelow();
 
-	eraseLinesBelow();
 	var glob = INPUT.join('')
 	var files = getAllGitFiles(glob);
-	console.log()
-	console.log()
-	console.log(chalk.red(files))
-
-	process.stdout.write(ansi.cursorRestorePosition);
+	printBelow(files);
 });
 
 renderLine();
-process.stdout.write(ansi.cursorSavePosition);
 var files = getAllGitFiles();
-console.log();
-console.log();
-console.log(chalk.red(files));
-process.stdout.write(ansi.cursorRestorePosition);
+printBelow(files);
 
 process.on('exit', function() {
 	process.stdout.clearLine();
-	eraseLinesBelow();
+	eraseBelow();
 	console.log();
 });
