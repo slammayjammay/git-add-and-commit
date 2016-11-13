@@ -48,8 +48,8 @@ proto.onReturn = function() {
 		execSync('git commit -m "' + message + '"');
 
 		console.log();
-		console.log('----------------');
 		console.log();
+		console.log('----------------');
 		console.log('Files committed successfully.');
 		process.exit();
 	}
