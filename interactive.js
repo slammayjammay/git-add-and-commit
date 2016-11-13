@@ -49,7 +49,8 @@ proto.onReturn = function() {
 
 		console.log();
 		console.log('----------------');
-		console.log('Files committed successfully');
+		console.log();
+		console.log('Files committed successfully.');
 		process.exit();
 	}
 };
