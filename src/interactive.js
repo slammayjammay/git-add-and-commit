@@ -43,6 +43,10 @@ proto.setup = function() {
 	process.on('exit', function() {
 		this.eraseBelow();
 		console.log();
+		process.stdin.write('Resetting all added files...');
+		execSync('git reset .');
+		process.stdin.write('Done.');
+		console.log();
 	}.bind(this));
 };
 
