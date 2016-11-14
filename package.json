@@ -1,17 +1,14 @@
 {
-  "name": "terminal-test",
+  "name": "git-add-and-commit",
   "version": "1.0.0",
-  "description": "",
-  "main": "do.js",
+  "description": "A quicker way to commit individual files.",
+  "main": "src/index.js",
   "preferGlobal": "true",
   "bin": {
     "gac": "./bin/git-add-and-commit.js",
     "git-add-and-commit": "./bin/git-add-and-commit.js"
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
+  "author": "Scott McKenzie",
   "license": "ISC",
   "dependencies": {
     "ansi-escapes": "^1.4.0",
