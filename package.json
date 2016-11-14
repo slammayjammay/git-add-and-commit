@@ -9,6 +9,10 @@
     "git-add-and-commit": "./src/index.js"
   },
   "author": "Scott McKenzie",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slammayjammay/git-add-and-commit"
+  },
   "license": "ISC",
   "dependencies": {
     "ansi-escapes": "^1.4.0",
