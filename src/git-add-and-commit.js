@@ -1,9 +1,10 @@
+var join = require('path').join;
 var execSync = require('child_process').execSync;
 var Interactive = require('./interactive');
 
 function GitAddAndCommit(options) {
 	if (options.help) {
-		console.log('help screen');
+		this.showHelpScreen();
 	} else if (options.interactive) {
 		new Interactive().run();
 	} else {
@@ -28,6 +29,12 @@ proto.normal = function() {
 		process.stdin.write('Done.');
 		console.log();
 	}
+};
+
+proto.showHelpScreen = function() {
+	var helpFile = join(__dirname, './help.txt');
+	var helpScreen = execSync('cat ' + helpFile);
+	console.log(helpScreen.toString('utf8'));
 };
 
 module.exports = GitAddAndCommit;
