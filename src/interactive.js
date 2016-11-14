@@ -9,6 +9,7 @@ function Interactive() {
 	this.getGitFiles = true;
 	this.getCommitMessage = false;
 	this.inputColor = 'red';
+	this.done = false;
 
 	this.setup();
 };
@@ -43,10 +44,13 @@ proto.setup = function() {
 	process.on('exit', function() {
 		this.eraseBelow();
 		console.log();
-		process.stdin.write('Resetting all added files...');
-		execSync('git reset .');
-		process.stdin.write('Done.');
-		console.log();
+
+		if (!this.done) {
+			process.stdin.write('Resetting all added files...');
+			execSync('git reset .');
+			process.stdin.write('Done.');
+			console.log();
+		}
 	}.bind(this));
 };
 
@@ -70,6 +74,8 @@ proto.onReturn = function() {
 		console.log('----------------');
 		console.log();
 		console.log('Files committed successfully.');
+
+		this.done = true;
 		process.exit();
 	}
 };
