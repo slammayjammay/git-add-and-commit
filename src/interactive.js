@@ -125,7 +125,12 @@ proto.renderAddSuccess = function() {
 
 	var glob = this.input;
 	var files = this.getAllGitFiles(glob);
-	execSync('git add *' + glob + '* &> /dev/null');
+
+	try {
+		execSync('git add *' + glob + '* &> /dev/null');
+	} catch (e) {
+
+	}
 
 	console.log('Files added: ');
 	console.log(chalk.green(files));
