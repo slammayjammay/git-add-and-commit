@@ -1,0 +1,11 @@
+[1mDESCRIPTION[22m
+  This command quickens the commit process for individual files.
+
+[1mUSAGE[22m
+  gac [options]
+  gac <path> <message>
+
+[1mOPTIONS[22m
+  -h, --help          Display this help screen.
+  -i, --interactive   Interactively find and commit files.
+
