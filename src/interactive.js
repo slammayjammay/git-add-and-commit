@@ -75,7 +75,7 @@ class Interactive {
 
 			this.renderLine()
 		} else if (this.getCommitMessage) {
-			var message = this.input
+			let message = this.input
 			execSync('git commit -m "' + message + '"')
 
 			console.log()
@@ -134,7 +134,7 @@ class Interactive {
 	 * Rewrites over the current line with the updated input string.
 	 */
 	renderLine() {
-		var string = this.prompt + this.colorInput(this.input)
+		let string = this.prompt + this.colorInput(this.input)
 		if (this.getCommitMessage) {
 			string += chalk.green('"')
 		}
@@ -153,8 +153,8 @@ class Interactive {
 	 */
 	renderGitFiles() {
 		this.eraseBelow()
-		var glob = this.input
-		var files = this.getAllGitFiles(glob)
+		let glob = this.input
+		let files = this.getAllGitFiles(glob)
 		this.printBelow(files)
 	}
 
@@ -166,8 +166,8 @@ class Interactive {
 		process.stdout.clearLine()
 		process.stdout.write(ansi.cursorLeft)
 
-		var glob = this.input
-		var files = this.getAllGitFiles(glob)
+		let glob = this.input
+		let files = this.getAllGitFiles(glob)
 
 		try {
 			execSync('git add *' + glob + '* &> /dev/null')
@@ -188,13 +188,9 @@ class Interactive {
 	 *
 	 * @param {string} glob - The given file glob.
 	 */
-	getAllGitFiles(glob) {
-		if (typeof glob === 'undefined') {
-			glob = ''
-		}
-
+	getAllGitFiles(glob = '') {
 		try {
-			var files = execSync("{ git diff --name-only; git ls-files --other --exclude-standard; } | sort | uniq | grep '" + glob +  "' 2> /dev/null");
+			let files = execSync("{ git diff --name-only; git ls-files --other --exclude-standard; } | sort | uniq | grep '" + glob +  "' 2> /dev/null");
 			return files.toString('utf8')
 		} catch (e) {
 			return ''

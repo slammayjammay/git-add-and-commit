@@ -22,9 +22,9 @@ class GitAddAndCommit {
 	*/
 	normal() {
 		try {
-			var args = process.argv.slice(2)
-			var fileGlob = args[0]
-			var commitMessage = args[1]
+			let args = process.argv.slice(2)
+			let fileGlob = args[0]
+			let commitMessage = args[1]
 
 			execSync('git add -- *' + fileGlob + '*')
 			execSync('git commit -m "' + commitMessage + '"')
@@ -41,8 +41,8 @@ class GitAddAndCommit {
 	* Shows the help screen.
 	*/
 	showHelpScreen() {
-		var helpFile = join(__dirname, './help.txt')
-		var helpScreen = execSync('cat ' + helpFile)
+		let helpFile = join(__dirname, './help.txt')
+		let helpScreen = execSync('cat ' + helpFile)
 		console.log(helpScreen.toString('utf8'))
 	}
 }
