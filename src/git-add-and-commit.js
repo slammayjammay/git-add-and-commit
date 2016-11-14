@@ -26,8 +26,8 @@ class GitAddAndCommit {
 			let fileGlob = args[0]
 			let commitMessage = args[1]
 
-			execSync('git add -- *' + fileGlob + '*')
-			execSync('git commit -m "' + commitMessage + '"')
+			execSync(`git add -- *${fileGlob}*`)
+			execSync(`git commit -m "${commitMessage}"`)
 		} catch (e) {
 			console.log('Encountered error -- aborting.')
 			process.stdin.write('Reset added files...')
@@ -42,7 +42,7 @@ class GitAddAndCommit {
 	*/
 	showHelpScreen() {
 		let helpFile = join(__dirname, './help.txt')
-		let helpScreen = execSync('cat ' + helpFile)
+		let helpScreen = execSync(`cat ${helpFile}`)
 		console.log(helpScreen.toString('utf8'))
 	}
 }
