@@ -22,9 +22,11 @@ proto.normal = function() {
 		execSync('git add -- *' + fileGlob + '*');
 		execSync('git commit -m "' + commitMessage + '"')
 	} catch (e) {
-		console.log(e);
-		console.log('Resetting added files...');
+		console.log('Encountered error -- aborting.');
+		process.stdin.write('Reset added files...');
 		execSync('git reset .');
+		process.stdin.write('Done.');
+		console.log();
 	}
 };
 
