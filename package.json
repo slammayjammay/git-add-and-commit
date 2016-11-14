@@ -1,6 +1,6 @@
 {
   "name": "git-add-and-commit",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A quicker way to commit individual files.",
   "main": "src/index.js",
   "preferGlobal": "true",
