@@ -1,7 +1,7 @@
-var chalk = require('chalk');
-var ansi = require('ansi-escapes');
-var readline = require('readline');
-var execSync = require('child_process').execSync;
+const chalk = require('chalk')
+const ansi = require('ansi-escapes')
+const readline = require('readline')
+const execSync = require('child_process').execSync
 
 /**
  * Allows user to interactively search for and commit files.
