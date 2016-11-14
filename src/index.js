@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-'use strict';
+'use strict'
 
-var join = require('path').join;
-var GitAddAndCommit = require(join(__dirname, './git-add-and-commit'));
+const join = require('path').join
+const GitAddAndCommit = require(join(__dirname, './git-add-and-commit'))
 
-var options = {};
+let options = {}
+let args = process.argv.slice(2)
 
-var args = process.argv.slice(2);
-if (args.indexOf('-i') !== -1 || args.indexOf('--interactive') !== -1) {
-	options.interactive = true;
+if (args.includes('-i') || args.includes('--interactive')) {
+	options.interactive = true
 }
-if (args.indexOf('-h') !== -1 || args.indexOf('--help') !== -1) {
-	options.help = true;
+if (args.includes('-h') || args.includes('--help')) {
+	options.help = true
 }
 
-new GitAddAndCommit(options);
+new GitAddAndCommit(options)
