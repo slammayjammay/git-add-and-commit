@@ -69,14 +69,14 @@ class Interactive {
 			this.getCommitMessage = true
 			this.renderAddSuccess()
 
-			this.prompt = 'Commit message: ' + chalk.green('"')
+			this.prompt = `Commit message: ${chalk.green('"')}`
 			this.input = ''
 			this.inputColor = 'green'
 
 			this.renderLine()
 		} else if (this.getCommitMessage) {
 			let message = this.input
-			execSync('git commit -m "' + message + '"')
+			execSync(`git commit -m "${message}"`)
 
 			console.log()
 			console.log()
@@ -170,7 +170,7 @@ class Interactive {
 		let files = this.getAllGitFiles(glob)
 
 		try {
-			execSync('git add *' + glob + '* &> /dev/null')
+			execSync(`git add *${glob}* &> /dev/null`)
 		} catch (e) {
 
 		}
@@ -190,7 +190,7 @@ class Interactive {
 	 */
 	getAllGitFiles(glob = '') {
 		try {
-			let files = execSync("{ git diff --name-only; git ls-files --other --exclude-standard; } | sort | uniq | grep '" + glob +  "' 2> /dev/null");
+			let files = execSync(`{ git diff --name-only; git ls-files --other --exclude-standard; } | sort | uniq | grep '${glob}' 2> /dev/null`)
 			return files.toString('utf8')
 		} catch (e) {
 			return ''
