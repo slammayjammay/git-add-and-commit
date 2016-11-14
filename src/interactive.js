@@ -3,6 +3,10 @@ var ansi = require('ansi-escapes');
 var readline = require('readline');
 var execSync = require('child_process').execSync;
 
+/**
+ * Allows user to interactively search for and commit files.
+ * @class
+ */
 function Interactive() {
 	this.prompt = 'Enter a file glob: ';
 	this.input = '';
@@ -16,6 +20,9 @@ function Interactive() {
 
 var proto = Interactive.prototype;
 
+/**
+ * Sets up keypress events, sets raw mode to true, and exits nicely.
+ */
 proto.setup = function() {
 	readline.emitKeypressEvents(process.stdin);
 	process.stdin.setRawMode(true);
@@ -54,6 +61,10 @@ proto.setup = function() {
 	}.bind(this));
 };
 
+/**
+ * Callback for when 'enter' is pressed. If user was searching for files, adds
+ * them to git. If user was entering commit message, commits files.
+ */
 proto.onReturn = function() {
 	if (this.getGitFiles) {
 		this.getGitFiles = false;
@@ -80,6 +91,9 @@ proto.onReturn = function() {
 	}
 };
 
+/**
+ * Deletes previous letter from input and moves cursor appropriately.
+ */
 proto.onBackspace = function() {
 	this.input = this.input.slice(0, this.input.length - 1);
 
@@ -89,6 +103,9 @@ proto.onBackspace = function() {
 	this.renderLine();
 };
 
+/**
+ * Adds the character to input string if not undefined.
+ */
 proto.onType = function(char, key) {
 	if (typeof char !== 'undefined') {
 		this.input += char + ''
@@ -96,16 +113,28 @@ proto.onType = function(char, key) {
 	this.renderLine();
 };
 
+/**
+ * Colors a given string.
+ *
+ * @param {string} input - The input string.
+ * @return {string}
+ */
 proto.colorInput = function(input) {
 	return chalk[this.inputColor](input);
 };
 
+/**
+ * Prints out the starting prompt and any modified git files.
+ */
 proto.run = function() {
 	this.renderLine();
 	let files = this.getAllGitFiles();
 	this.printBelow(files);
 };
 
+/**
+ * Rewrites over the current line with the updated input string.
+ */
 proto.renderLine = function() {
 	var string = this.prompt + this.colorInput(this.input);
 	if (this.getCommitMessage) {
@@ -121,6 +150,9 @@ proto.renderLine = function() {
 	}
 };
 
+/**
+ * Prints out the retrieved git files from the saved user input.
+ */
 proto.renderGitFiles = function() {
 	this.eraseBelow();
 	var glob = this.input;
@@ -128,6 +160,9 @@ proto.renderGitFiles = function() {
 	this.printBelow(files);
 };
 
+/**
+ * Lets the user know when files have been added.
+ */
 proto.renderAddSuccess = function() {
 	this.eraseBelow();
 	process.stdout.clearLine();
@@ -148,6 +183,13 @@ proto.renderAddSuccess = function() {
 	console.log();
 };
 
+/**
+ * Retrieves all modified git files from a given glob. Supresses any error
+ * messages outputed by git (most times when the glob is an empty string git
+ * let the user know it ignored files in .gitignore -- hide this message).
+ *
+ * @param {string} glob - The given file glob.
+ */
 proto.getAllGitFiles = function(glob) {
 	if (typeof glob === 'undefined') {
 		glob = '';
@@ -161,10 +203,18 @@ proto.getAllGitFiles = function(glob) {
 	}
 };
 
+/**
+ * Erases all retrieved git files.
+ */
 proto.eraseBelow = function() {
 	process.stdout.write(ansi.eraseDown);
 };
 
+/**
+ * Prints out the retrieved git files below the input line.
+ *
+ * @param {string} files - The retrieved git files.
+ */
 proto.printBelow = function(files) {
 	process.stdout.write(ansi.cursorSavePosition);
 	console.log();

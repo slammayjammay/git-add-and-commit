@@ -2,6 +2,10 @@ var join = require('path').join;
 var execSync = require('child_process').execSync;
 var Interactive = require('./interactive');
 
+/**
+ * Reads a file glob and a commit message, and commits to git.
+ * @class
+ */
 function GitAddAndCommit(options) {
 	if (options.help) {
 		this.showHelpScreen();
@@ -14,6 +18,9 @@ function GitAddAndCommit(options) {
 
 var proto = GitAddAndCommit.prototype;
 
+/**
+ * Attempts to add and commit. Errors out in a non-ugly way.
+ */
 proto.normal = function() {
 	try {
 		var args = process.argv.slice(2);
@@ -31,6 +38,9 @@ proto.normal = function() {
 	}
 };
 
+/**
+ * Shows the help screen.
+ */
 proto.showHelpScreen = function() {
 	var helpFile = join(__dirname, './help.txt');
 	var helpScreen = execSync('cat ' + helpFile);
