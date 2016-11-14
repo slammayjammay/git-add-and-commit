@@ -5,8 +5,8 @@
   "main": "src/index.js",
   "preferGlobal": "true",
   "bin": {
-    "gac": "./bin/git-add-and-commit.js",
-    "git-add-and-commit": "./bin/git-add-and-commit.js"
+    "gac": "./src/index.js",
+    "git-add-and-commit": "./src/index.js"
   },
   "author": "Scott McKenzie",
   "license": "ISC",

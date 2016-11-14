@@ -1,33 +1,17 @@
-var execSync = require('child_process').execSync;
-var Interactive = require('./interactive');
+#!/usr/bin/env node
+'use strict';
 
-function GitAddAndCommit(options) {
-	if (options.help) {
-		console.log('help screen');
-	} else if (options.interactive) {
-		new Interactive().run();
-	} else {
-		this.normal();
-	}
+var join = require('path').join;
+var GitAddAndCommit = require(join(__dirname, './git-add-and-commit'));
+
+var options = {};
+
+var args = process.argv.slice(2);
+if (args.indexOf('-i') !== -1 || args.indexOf('--interactive') !== -1) {
+	options.interactive = true;
+}
+if (args.indexOf('-h') !== -1 || args.indexOf('--help') !== -1) {
+	options.help = true;
 }
 
-var proto = GitAddAndCommit.prototype;
-
-proto.normal = function() {
-	try {
-		var args = process.argv.slice(2);
-		var fileGlob = args[0];
-		var commitMessage = args[1];
-
-		execSync('git add -- *' + fileGlob + '*');
-		execSync('git commit -m "' + commitMessage + '"')
-	} catch (e) {
-		console.log('Encountered error -- aborting.');
-		process.stdin.write('Reset added files...');
-		execSync('git reset .');
-		process.stdin.write('Done.');
-		console.log();
-	}
-};
-
-module.exports = GitAddAndCommit;
+new GitAddAndCommit(options);
