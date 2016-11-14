@@ -144,7 +144,7 @@ proto.getAllGitFiles = function(glob) {
 	}
 
 	try {
-		var files = execSync("{ git diff --name-only; git ls-files --other --exclude-standard; } | sort | uniq | grep '" + glob +  "'");
+		var files = execSync("{ git diff --name-only; git ls-files --other --exclude-standard; } | sort | uniq | grep '" + glob +  "' 2> /dev/null");
 		return files.toString('utf8');
 	} catch (e) {
 		return '';
