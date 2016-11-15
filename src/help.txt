@@ -13,4 +13,4 @@
 
 [1mEXAMPLES[22m
   gac README.md "Add README"
-  gac ind "Modify index.js"
+  gac index "Commit all index files"
