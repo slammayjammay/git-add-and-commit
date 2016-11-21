@@ -4,6 +4,7 @@ const chalk = require('chalk')
 const ansiEscapes = require('ansi-escapes')
 const stripAnsi = require('strip-ansi')
 const getCursorPosition = require('get-cursor-position')
+const debounce = require('lodash.debounce')
 const Keypress = require('../../keypress')
 const Gymnast = require('../../gymnast/src')
 
@@ -40,14 +41,14 @@ class Interactive {
 		this.setup()
 
 		// search git files on keypress
-		let onKeypress = () => {
+		let onKeypress = debounce(() => {
 			let input = keypress.input()
 			let glob = stripAnsi(input)
-
 			gymnast.find('enter').content(chalk.green('Enter a file glob: ') + input)
+
 			this.renderFoundGitFiles(glob)
 			gymnast.jumpTo('enter', -1)
-		}
+		}, 200)
 
 		keypress.on('keypress', onKeypress)
 		keypress.once('return', () => {
