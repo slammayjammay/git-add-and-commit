@@ -114,6 +114,8 @@ class Interactive {
 		gymnast.break()
 		gymnast.block('Files added successfully.')
 		gymnast.render()
+
+		keypress.exit()
 	}
 
 	renderFoundGitFiles(glob = '') {
