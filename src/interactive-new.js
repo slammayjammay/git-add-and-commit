@@ -112,7 +112,7 @@ class Interactive {
 		gymnast.break()
 		gymnast.block('---------------------------------------------')
 		gymnast.break()
-		gymnast.block('Files added successfully.')
+		gymnast.block('Files committed successfully.')
 		gymnast.render()
 
 		keypress.exit()
