@@ -1,221 +1,144 @@
-const chalk = require('chalk')
-const ansi = require('ansi-escapes')
-const readline = require('readline')
 const execSync = require('child_process').execSync
+const chalk = require('chalk')
+const stripAnsi = require('strip-ansi')
+const ansiEscapes = require('ansi-escapes')
+const debounce = require('lodash.debounce')
+const keypress = require('terminal-keypress')
+const jumper = require('terminal-jumper')
 
-/**
- * Allows user to interactively search for and commit files.
- * @class
- */
 class Interactive {
-	constructor() {
-		this.prompt = 'Enter a file glob: '
-		this.input = ''
-		this.getGitFiles = true
-		this.getCommitMessage = false
-		this.inputColor = 'red'
-		this.done = false
-		this.setup()
-	}
-
-	/**
-	 * Sets up keypress events, sets raw mode to true, and exits nicely.
-	 */
 	setup() {
-		readline.emitKeypressEvents(process.stdin)
-		process.stdin.setRawMode(true)
-		process.stdin.resume()
+		jumper.block(chalk.green('Enter a file glob: '), 'enter')
+		jumper.break()
+		jumper.block(chalk.green('Files found:'), 'found')
+		jumper.block('', 'files')
+		jumper.render()
 
-		process.stdin.on('keypress', (char, key) => {
-			if (key.ctrl && key.name === 'c') {
-				process.exit()
-			}
-		})
+		this.renderFoundGitFiles()
+		jumper.jumpTo('enter', -1)
 
-		process.stdin.on('keypress', (char, key) => {
-			if (key.name === 'backspace') {
-				this.onBackspace()
-			} else if (key.name === 'return') {
-				this.onReturn()
-			} else {
-				this.onType(char, key)
-			}
+		keypress.init()
+		keypress.beginInput()
+		keypress.color(letter => chalk.red(letter))
 
-			if (this.getGitFiles) {
-				this.renderGitFiles()
-			}
-		})
+		this.exitBeforeAdd = this.exitBeforeAdd.bind(this)
+		this.exitAfterAdd = this.exitAfterAdd.bind(this)
 
-		process.on('exit', () => {
-			this.eraseBelow()
-			console.log()
-
-			if (!this.done) {
-				process.stdin.write('Resetting all added files...')
-				execSync('git reset .')
-				process.stdin.write('Done.')
-				console.log()
-			}
-		})
+		keypress.on('exit', this.exitBeforeAdd)
 	}
 
-	/**
-	 * Callback for when 'enter' is pressed. If user was searching for files, adds
-	 * them to git. If user was entering commit message, commits files.
-	 */
-	onReturn() {
-		if (this.getGitFiles) {
-			this.getGitFiles = false
-			this.getCommitMessage = true
-			this.renderAddSuccess()
-
-			this.prompt = `Commit message: ${chalk.green('"')}`
-			this.input = ''
-			this.inputColor = 'green'
-
-			this.renderLine()
-		} else if (this.getCommitMessage) {
-			let message = this.input
-			execSync(`git commit -m "${message}"`)
-
-			console.log()
-			console.log()
-			console.log('----------------')
-			console.log()
-			console.log('Files committed successfully.')
-
-			this.done = true
-			process.exit()
-		}
-	}
-
-	/**
-	 * Deletes previous letter from input and moves cursor appropriately.
-	 */
-	onBackspace() {
-		this.input = this.input.slice(0, this.input.length - 1)
-
-		if (this.input.length !== 0) {
-			process.stdout.write(ansi.cursorMove(-1))
-		}
-		this.renderLine()
-	}
-
-	/**
-	 * Adds the character to input string if not undefined.
-	 */
-	onType(char, key) {
-		if (typeof char !== 'undefined') {
-			this.input += char + ''
-		}
-		this.renderLine()
-	}
-
-	/**
-	 * Colors a given string.
-	 *
-	 * @param {string} input - The input string.
-	 * @return {string}
-	 */
-	colorInput(input) {
-		return chalk[this.inputColor](input)
-	}
-
-	/**
-	 * Prints out the starting prompt and any modified git files.
-	 */
 	run() {
-		this.renderLine()
-		let files = this.getAllGitFiles()
-		this.printBelow(files)
+		this.setup()
+
+		// search git files on keypress
+		let onKeypress = debounce((char, key) => {
+			let input = keypress.input()
+			let glob = stripAnsi(input)
+			jumper.find('enter').content(chalk.green('Enter a file glob: ') + input)
+
+			this.renderFoundGitFiles(glob)
+			jumper.jumpTo('enter', -1)
+		}, 200)
+
+		keypress.on('keypress', onKeypress)
+		keypress.once('return', () => {
+			keypress.removeListener('keypress', onKeypress)
+			this.renderAddSuccess()
+			this.startCommit()
+		})
 	}
 
-	/**
-	 * Rewrites over the current line with the updated input string.
-	 */
-	renderLine() {
-		let string = this.prompt + this.colorInput(this.input)
-		if (this.getCommitMessage) {
-			string += chalk.green('"')
-		}
-
-		process.stdout.clearLine()
-		process.stdout.cursorTo(0)
-		process.stdout.write(string)
-
-		if (this.getCommitMessage) {
-			process.stdout.write(ansi.cursorMove(-1))
-		}
-	}
-
-	/**
-	 * Prints out the retrieved git files from the saved user input.
-	 */
-	renderGitFiles() {
-		this.eraseBelow()
-		let glob = this.input
-		let files = this.getAllGitFiles(glob)
-		this.printBelow(files)
-	}
-
-	/**
-	 * Lets the user know when files have been added.
-	 */
 	renderAddSuccess() {
-		this.eraseBelow()
-		process.stdout.clearLine()
-		process.stdout.write(ansi.cursorLeft)
+		jumper.reset()
+		let glob = stripAnsi(keypress.input())
 
-		let glob = this.input
-		let files = this.getAllGitFiles(glob)
+		this.addFiles = this.getGitFilesMatching(glob).split('\n').filter(file => file !== '')
+		let foundFiles = this.addFiles
+			.map(file => `${chalk.red(file)}  ${chalk.green('✓')}`)
+			.join('\n')
 
+		jumper.block(chalk.green('Added files:'), 'found')
+		jumper.block(chalk.red(foundFiles), 'files')
+		jumper.break()
+		jumper.block('---------------------------------------------')
+		jumper.break()
+		jumper.block(chalk.green('Enter commit message: ""'), 'commit')
+		jumper.render()
+		jumper.jumpTo('commit', -2)
+	}
+
+	startCommit() {
+		keypress.color(letter => chalk.green(letter))
+		keypress.beginInput()
+
+		let onKeypress = debounce(() => {
+			let content = `Enter commit message: ${chalk.green('"')}${keypress.input()}${chalk.green('"')}`
+			jumper.find('commit').content(content)
+			jumper.render('commit')
+			jumper.jumpTo('commit', -2)
+		}, 200)
+		keypress.on('keypress', onKeypress)
+
+		keypress.once('return', () => {
+			this.commitMessage = stripAnsi(keypress.input())
+			keypress.removeListener('keypress', onKeypress)
+			this.commit()
+			this.complete()
+		})
+
+		keypress.removeListener('exit', this.exitBeforeAdd)
+		keypress.on('exit', this.exitAfterAdd)
+	}
+
+	commit() {
+		for (let file of this.addFiles) {
+			execSync(`git add ${file}`)
+		}
+		execSync(`git commit -m "${this.commitMessage}"`)
+
+		keypress.removeListener('exit', this.exitAfterAdd)
+	}
+
+	complete() {
+		jumper.break()
+		jumper.block('---------------------------------------------')
+		jumper.break()
+		jumper.block('Files committed successfully.')
+		jumper.render()
+
+		keypress.exit()
+	}
+
+	renderFoundGitFiles(glob = '') {
+		let gitFiles = this.getGitFilesMatching(glob)
+
+		jumper.find('files').content(chalk.red(gitFiles))
+		jumper.render()
+	}
+
+	getGitFilesMatching(glob) {
+		let findModified = 'git diff --name-only'
+		let findUntracked = 'git ls-files --other --exclude-standard'
+		let command = `{ ${findModified}; ${findUntracked}; } | sort | uniq | grep '${glob}' 2> /dev/null`
+
+		let files
 		try {
-			execSync(`git add *${glob}* &> /dev/null`)
+			files = execSync(command).toString('utf8')
 		} catch (e) {
-
+			files = ''
 		}
 
-		console.log('Files added: ')
-		console.log(chalk.green(files))
-		console.log('----------------')
-		console.log()
+		return files
 	}
 
-	/**
-	 * Retrieves all modified git files from a given glob. Supresses any error
-	 * messages outputed by git (most times when the glob is an empty string git
-	 * let the user know it ignored files in .gitignore -- hide this message).
-	 *
-	 * @param {string} glob - The given file glob.
-	 */
-	getAllGitFiles(glob = '') {
-		try {
-			let files = execSync(`{ git diff --name-only; git ls-files --other --exclude-standard; } | sort | uniq | grep '${glob}' 2> /dev/null`)
-			return files.toString('utf8')
-		} catch (e) {
-			return ''
-		}
+	exitBeforeAdd() {
+		jumper.erase()
 	}
 
-	/**
-	 * Erases all retrieved git files.
-	 */
-	eraseBelow() {
-		process.stdout.write(ansi.eraseDown)
-	}
-
-	/**
-	 * Prints out the retrieved git files below the input line.
-	 *
-	 * @param {string} files - The retrieved git files.
-	 */
-	printBelow(files) {
-		process.stdout.write(ansi.cursorSavePosition)
+	exitAfterAdd() {
 		console.log()
 		console.log()
-		console.log(chalk.green('Files found: '))
-		console.log(chalk.red(files))
-		process.stdout.write(ansi.cursorRestorePosition)
+		console.log('Aborting...no files added.')
 	}
 }
 
