@@ -1,4 +1,5 @@
 const execSync = require('child_process').execSync
+const spawnSync = require('child_process').spawnSync
 const chalk = require('chalk')
 const stripAnsi = require('strip-ansi')
 const ansiEscapes = require('ansi-escapes')
@@ -7,8 +8,18 @@ const keypress = require('terminal-keypress')
 const jumper = require('terminal-jumper')
 
 class Interactive {
+	constructor() {
+		this.showingDiff = false
+		this.gitAddPrompt = `${chalk.green('Enter a file glob')} ${chalk.gray('(press tab to toggle diff)')}${chalk.green(': ')}`
+
+		this.onType = debounce(this.onType.bind(this), 200)
+		this.onTab = this.onTab.bind(this)
+		this.exitBeforeAdd = this.exitBeforeAdd.bind(this)
+		this.exitAfterAdd = this.exitAfterAdd.bind(this)
+	}
+
 	setup() {
-		jumper.block(chalk.green('Enter a file glob: '), 'enter')
+		jumper.block(this.gitAddPrompt, 'enter')
 		jumper.break()
 		jumper.block(chalk.green('Files found:'), 'found')
 		jumper.block('', 'files')
@@ -18,11 +29,10 @@ class Interactive {
 		jumper.jumpTo('enter', -1)
 
 		keypress.init()
+		keypress.disableBehavior('tab right left')
+
 		keypress.beginInput()
 		keypress.color(letter => chalk.red(letter))
-
-		this.exitBeforeAdd = this.exitBeforeAdd.bind(this)
-		this.exitAfterAdd = this.exitAfterAdd.bind(this)
 
 		keypress.on('exit', this.exitBeforeAdd)
 	}
@@ -30,22 +40,59 @@ class Interactive {
 	run() {
 		this.setup()
 
-		// search git files on keypress
-		let onKeypress = debounce((char, key) => {
-			let input = keypress.input()
-			let glob = stripAnsi(input)
-			jumper.find('enter').content(chalk.green('Enter a file glob: ') + input)
+		keypress.on('keypress', this.onType)
+		keypress.on('tab', this.onTab)
 
-			this.renderFoundGitFiles(glob)
-			jumper.jumpTo('enter', -1)
-		}, 200)
-
-		keypress.on('keypress', onKeypress)
 		keypress.once('return', () => {
-			keypress.removeListener('keypress', onKeypress)
+			keypress.removeListener('keypress', this.onType)
+			keypress.removeListener('tab', this.onTab)
 			this.renderAddSuccess()
 			this.startCommit()
 		})
+	}
+
+	onType() {
+		let input = keypress.input()
+		let glob = stripAnsi(input)
+		jumper.find('enter').content(this.gitAddPrompt + input)
+
+		this.renderFoundGitFiles(glob)
+		jumper.jumpTo('enter', -1)
+	}
+
+	onTab() {
+		if (this.showingDiff) {
+			this.showOriginalScreen()
+		} else {
+			this.showAlternateScreen()
+		}
+
+		this.showingDiff = !this.showingDiff
+	}
+
+	showOriginalScreen() {
+		// remove scrollback so that scrolling up on the original screen doesn't show the diff
+		process.stdout.write(execSync( "clear && printf \'\\e[3J\'", { encoding: "utf8" }))
+		// switch to original screen
+		spawnSync('tput', ['rmcup'], { stdio: 'inherit' })
+
+		jumper.jumpTo('enter', -1)
+		keypress.enable()
+	}
+
+	showAlternateScreen() {
+		// prevent rendering on each keypress
+		keypress.disable()
+
+		// show diff on alternate screen
+		spawnSync('tput', ['smcup'], { stdio: 'inherit' })
+		let glob = stripAnsi(keypress.input())
+		let diff = execSync(`git -c color.ui=always diff *${glob}*`).toString('utf8')
+		jumper.cursorTo(0, 0)
+		console.log(diff)
+
+		// make sure to enable a second tab after disabling all events
+		keypress.once('tab', this.onTab)
 	}
 
 	renderAddSuccess() {
@@ -53,12 +100,13 @@ class Interactive {
 		let glob = stripAnsi(keypress.input())
 
 		this.addFiles = this.getGitFilesMatching(glob).split('\n').filter(file => file !== '')
-		let foundFiles = this.addFiles
-			.map(file => `${chalk.red(file)}  ${chalk.green('✓')}`)
-			.join('\n')
 
 		jumper.block(chalk.green('Added files:'), 'found')
-		jumper.block(chalk.red(foundFiles), 'files')
+		for (let i = 0; i < this.addFiles.length; i++) {
+			let file = this.addFiles[i]
+			let id = `addedFile${i}`
+			jumper.block(`${chalk.red(file)}  ${chalk.green('✓')}`, id)
+		}
 		jumper.break()
 		jumper.block('---------------------------------------------')
 		jumper.break()
@@ -117,9 +165,9 @@ class Interactive {
 	}
 
 	getGitFilesMatching(glob) {
-		let findModified = 'git diff --name-only'
-		let findUntracked = 'git ls-files --other --exclude-standard'
-		let command = `{ ${findModified}; ${findUntracked}; } | sort | uniq | grep '${glob}' 2> /dev/null`
+		let getModified = 'git diff --name-only'
+		let getUntracked = 'git ls-files --other --exclude-standard'
+		let command = `{ ${getModified}; ${getUntracked}; } | sort | uniq | grep '${glob}' 2> /dev/null`
 
 		let files
 		try {
@@ -136,9 +184,18 @@ class Interactive {
 	}
 
 	exitAfterAdd() {
+		process.stdout.write(ansiEscapes.cursorSavePosition)
+
+		for (let i = 0; i < this.addFiles.length; i++) {
+			let id = `addedFile${i}`
+			jumper.jumpTo(id, -2)
+			process.stdout.write(chalk.red('✗'))
+		}
+
+		process.stdout.write(ansiEscapes.cursorRestorePosition)
 		console.log()
 		console.log()
-		console.log('Aborting...no files added.')
+		console.log('Aborting -- no files added.')
 	}
 }
 
