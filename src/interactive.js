@@ -87,7 +87,7 @@ class Interactive {
 		// show diff on alternate screen
 		spawnSync('tput', ['smcup'], { stdio: 'inherit' })
 		let glob = stripAnsi(keypress.input())
-		let diff = execSync(`git -c color.ui=always diff *${glob}*`).toString('utf8')
+		let diff = execSync(`git -c color.ui=always diff -- *${glob}*`).toString('utf8')
 		jumper.cursorTo(0, 0)
 		console.log(diff)
 
