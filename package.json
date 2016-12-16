@@ -21,7 +21,7 @@
     "lodash.debounce": "^4.0.8",
     "strip-ansi": "^3.0.1",
     "terminal-jumper": "^0.1.4",
-    "terminal-keypress": "^0.2.0"
+    "terminal-keypress": "^0.3.0"
   },
   "keywords": [
     "git",
