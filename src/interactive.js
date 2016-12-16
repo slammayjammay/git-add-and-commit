@@ -5,7 +5,8 @@ const stripAnsi = require('strip-ansi')
 const ansiEscapes = require('ansi-escapes')
 const debounce = require('lodash.debounce')
 const keypress = require('terminal-keypress')
-const jumper = require('terminal-jumper')
+// const jumper = require('terminal-jumper')
+const jumper = require('../../terminal-jumper')
 
 class Interactive {
 	constructor() {
@@ -16,29 +17,55 @@ class Interactive {
 		this.onTab = this.onTab.bind(this)
 		this.exitBeforeAdd = this.exitBeforeAdd.bind(this)
 		this.exitAfterAdd = this.exitAfterAdd.bind(this)
-	}
-
-	setup() {
-		jumper.block(this.gitAddPrompt, 'enter')
-		jumper.break()
-		jumper.block(chalk.green('Files found:'), 'found')
-		jumper.block('', 'files')
-		jumper.render()
-
-		this.renderFoundGitFiles()
-		jumper.jumpTo('enter', -1)
 
 		keypress.init()
-		keypress.disableBehavior('tab right left')
-
-		keypress.beginInput()
-		keypress.color(letter => chalk.red(letter))
-
 		keypress.on('exit', this.exitBeforeAdd)
 	}
 
 	run() {
-		this.setup()
+		let addedFiles = execSync('git diff --cached --name-only').toString('utf8').trim()
+
+		if (addedFiles) {
+			this.showAlreadyAddedFilesWarning()
+		} else {
+			this.showGlobPrompt()
+		}
+	}
+
+	showAlreadyAddedFilesWarning() {
+		let warningMessage = chalk.bold('There are file(s) already staged for commit. Continue (y/n)? ')
+		jumper.block(warningMessage, 'addWarning')
+		jumper.render()
+		jumper.jumpTo('addWarning', -1)
+		keypress.beginInput()
+
+		keypress.once('return', () => {
+			let answer = stripAnsi(keypress.input())
+			jumper.erase()
+
+			if (['y', 'yes', 'Y', 'Yes'].includes(answer)) {
+				jumper.remove('addWarning')
+				this.showGlobPrompt()
+			} else if (['n', 'no', 'N', 'No'].includes(answer)) {
+				keypress.exit()
+			}
+		})
+	}
+
+	showGlobPrompt() {
+		// configure keypress
+		keypress.color(letter => chalk.red(letter))
+		keypress.disableBehavior('tab right left')
+
+		// show prompt and available files
+		jumper.block(this.gitAddPrompt, 'enter')
+		jumper.break()
+		jumper.block(chalk.green('Files found:'), 'found')
+		jumper.block('', 'files')
+		this.renderFoundGitFiles()
+
+		jumper.jumpTo('enter', -1)
+		keypress.beginInput()
 
 		keypress.on('keypress', this.onType)
 		keypress.on('tab', this.onTab)
@@ -52,7 +79,7 @@ class Interactive {
 	}
 
 	onType() {
-		let input = keypress.input()
+		let input = keypress.input(true)
 		let glob = stripAnsi(input)
 		jumper.find('enter').content(this.gitAddPrompt + input)
 
