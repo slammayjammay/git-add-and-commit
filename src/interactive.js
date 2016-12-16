@@ -1,7 +1,6 @@
 const execSync = require('child_process').execSync
 const spawnSync = require('child_process').spawnSync
 const chalk = require('chalk')
-const stripAnsi = require('strip-ansi')
 const ansiEscapes = require('ansi-escapes')
 const debounce = require('lodash.debounce')
 const keypress = require('terminal-keypress')
@@ -40,7 +39,7 @@ class Interactive {
 		keypress.beginInput()
 
 		keypress.once('return', () => {
-			let answer = stripAnsi(keypress.input())
+			let answer = keypress.input()
 			jumper.erase()
 
 			if (['y', 'yes', 'Y', 'Yes'].includes(answer)) {
@@ -79,8 +78,8 @@ class Interactive {
 	}
 
 	onType() {
+		let glob = keypress.input()
 		let input = keypress.input(true)
-		let glob = stripAnsi(input)
 		jumper.find('enter').content(this.gitAddPrompt + input)
 
 		this.renderFoundGitFiles(glob)
@@ -113,7 +112,7 @@ class Interactive {
 
 		// show diff on alternate screen
 		spawnSync('tput', ['smcup'], { stdio: 'inherit' })
-		let glob = stripAnsi(keypress.input())
+		let glob = keypress.input()
 		let diff = execSync(`git -c color.ui=always diff -- *${glob}*`).toString('utf8')
 		jumper.cursorTo(0, 0)
 		console.log(diff)
@@ -124,7 +123,7 @@ class Interactive {
 
 	renderAddSuccess() {
 		jumper.reset()
-		let glob = stripAnsi(keypress.input())
+		let glob = keypress.input()
 
 		this.addFiles = this.getGitFilesMatching(glob).split('\n').filter(file => file !== '')
 
@@ -155,7 +154,7 @@ class Interactive {
 		keypress.on('keypress', onKeypress)
 
 		keypress.once('return', () => {
-			this.commitMessage = stripAnsi(keypress.input())
+			this.commitMessage = keypress.input()
 			keypress.removeListener('keypress', onKeypress)
 			this.commit()
 			this.complete()
