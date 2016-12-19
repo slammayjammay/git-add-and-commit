@@ -21,6 +21,18 @@ class GitAddAndCommit {
 	* Attempts to add and commit. Errors out in a non-ugly way.
 	*/
 	normal() {
+		let alreadyStaged = execSync('git diff --cached --name-only').toString('utf8')
+		let stagedFiles = alreadyStaged.trim().split('\n').filter(file => file !== '')
+
+		if (alreadyStaged) {
+			// ignore all files that have already been staged, then stage them after
+			// this commit
+			for (let file of stagedFiles) {
+				execSync(`git reset ${file}`)
+				console.log('There are file(s) already staged for commit, but they have been ignored.')
+			}
+		}
+
 		try {
 			let args = process.argv.slice(2)
 			let fileGlob = args[0]
@@ -28,6 +40,15 @@ class GitAddAndCommit {
 
 			execSync(`git add -- *${fileGlob}*`)
 			execSync(`git commit -m "${commitMessage}"`)
+
+			console.log('Commit successful.')
+			if (alreadyStaged) {
+				process.stdout.write('Re-adding previously staged files...')
+				for (let file of stagedFiles) {
+					execSync(`git add ${file}`)
+				}
+				console.log('Done.')
+			}
 		} catch (e) {
 			console.log('Encountered error -- aborting.')
 			process.stdin.write('Reset added files...')
