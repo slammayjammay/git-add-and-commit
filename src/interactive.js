@@ -4,8 +4,7 @@ const chalk = require('chalk')
 const ansiEscapes = require('ansi-escapes')
 const debounce = require('lodash.debounce')
 const keypress = require('terminal-keypress')
-// const jumper = require('terminal-jumper')
-const jumper = require('../../terminal-jumper')
+const jumper = require('terminal-jumper')
 
 class Interactive {
 	constructor() {
@@ -70,6 +69,7 @@ class Interactive {
 		keypress.on('tab', this.onTab)
 
 		keypress.once('return', () => {
+			this.hack = true
 			keypress.removeListener('keypress', this.onType)
 			keypress.removeListener('tab', this.onTab)
 			this.renderAddSuccess()
@@ -78,6 +78,10 @@ class Interactive {
 	}
 
 	onType() {
+		if (this.hack) {
+			return
+		}
+
 		let glob = keypress.input()
 		let input = keypress.input(true)
 		jumper.find('enter').content(this.gitAddPrompt + input)
@@ -89,8 +93,10 @@ class Interactive {
 	onTab() {
 		if (this.showingDiff) {
 			this.showOriginalScreen()
+			this.hack = false
 		} else {
 			this.showAlternateScreen()
+			this.hack = true
 		}
 
 		this.showingDiff = !this.showingDiff
@@ -136,26 +142,31 @@ class Interactive {
 		jumper.break()
 		jumper.block('---------------------------------------------')
 		jumper.break()
-		jumper.block(chalk.green('Enter commit message: ""'), 'commit')
+		jumper.block(chalk.green('Enter commit message: "'), 'commit')
 		jumper.render()
-		jumper.jumpTo('commit', -2)
+
+		jumper.jumpTo('commit', -1)
+		process.stdout.write(chalk.green('"'))
+		jumper.jumpTo('commit', -1)
 	}
 
 	startCommit() {
 		keypress.color(letter => chalk.green(letter))
 		keypress.beginInput()
 
-		let onKeypress = debounce(() => {
-			let content = `Enter commit message: ${chalk.green('"')}${keypress.input()}${chalk.green('"')}`
-			jumper.find('commit').content(content)
-			jumper.render('commit')
-			jumper.jumpTo('commit', -2)
-		}, 200)
+		let onKeypress = () => {
+			process.stdout.write(`${chalk.green('"')}`)
+			process.stdout.write(ansiEscapes.cursorBackward(1))
+		}
 		keypress.on('keypress', onKeypress)
 
 		keypress.once('return', () => {
-			this.commitMessage = keypress.input()
 			keypress.removeListener('keypress', onKeypress)
+			this.commitMessage = keypress.input()
+
+			let content = jumper.find('commit').text
+			content = `${content}${keypress.input(true)}${chalk.green('"')}`
+			jumper.find('commit').content(content)
 			this.commit()
 			this.complete()
 		})
