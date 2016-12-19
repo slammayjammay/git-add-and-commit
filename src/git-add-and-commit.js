@@ -27,10 +27,11 @@ class GitAddAndCommit {
 		if (alreadyStaged) {
 			// ignore all files that have already been staged, then stage them after
 			// this commit
+			process.stdout.write('There are file(s) already staged for commit. Resetting staged files...')
 			for (let file of stagedFiles) {
 				execSync(`git reset ${file}`)
-				console.log('There are file(s) already staged for commit, but they have been ignored.')
 			}
+			console.log('Done.')
 		}
 
 		try {
