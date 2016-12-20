@@ -284,7 +284,7 @@ class Interactive {
 
 	renderFoundGitFiles(glob = '') {
 		// remove previous search
-		jumper.removeAllMatching(/gitFile.*/)
+		jumper.removeAllMatching(/gitFile\d+/)
 
 		// create a new block for each file
 		let gitFiles = this.getGitFilesMatching(glob)
