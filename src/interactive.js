@@ -3,20 +3,26 @@ const spawnSync = require('child_process').spawnSync
 const chalk = require('chalk')
 const ansiEscapes = require('ansi-escapes')
 const debounce = require('lodash.debounce')
-const keypress = require('terminal-keypress')
-const jumper = require('terminal-jumper')
+// const keypress = require('terminal-keypress')
+// const jumper = require('terminal-jumper')
+const keypress = require('../../terminal-keypress')
+const jumper = require('../../terminal-jumper')
 
 class Interactive {
 	constructor() {
+		this.fileIndex = 0
+		this.showingIndicator = false
 		this.showingDiff = false
 		this.gitAddPrompt = `${chalk.green('Enter a file glob')} ${chalk.gray('(press tab to toggle diff)')}${chalk.green(': ')}`
 
 		this.onType = debounce(this.onType.bind(this), 200)
 		this.onTab = this.onTab.bind(this)
+		this.onArrow = this.onArrow.bind(this)
 		this.exitBeforeAdd = this.exitBeforeAdd.bind(this)
 		this.exitAfterAdd = this.exitAfterAdd.bind(this)
 
 		keypress.init()
+		keypress.on('exit', () => this.showCursor())
 		keypress.on('exit', this.exitBeforeAdd)
 	}
 
@@ -59,7 +65,6 @@ class Interactive {
 		jumper.block(this.gitAddPrompt, 'enter')
 		jumper.break()
 		jumper.block(chalk.green('Files found:'), 'found')
-		jumper.block('', 'files')
 		this.renderFoundGitFiles()
 
 		jumper.jumpTo('enter', -1)
@@ -67,8 +72,10 @@ class Interactive {
 
 		keypress.on('keypress', this.onType)
 		keypress.on('tab', this.onTab)
+		keypress.on('arrow', this.onArrow)
 
 		keypress.once('return', () => {
+			this.showCursor()
 			keypress.removeListener('keypress', this.onType)
 			keypress.removeListener('tab', this.onTab)
 			this.renderAddSuccess()
@@ -81,9 +88,15 @@ class Interactive {
 			return
 		}
 
+		if (this.showingIndicator) {
+			this.showCursor()
+			this.fileIndex = 0
+			this.showingIndicator = false
+		}
+
 		let glob = keypress.input()
-		let input = keypress.input(true)
-		jumper.find('enter').content(this.gitAddPrompt + input)
+		let coloredInput = keypress.input(true)
+		jumper.find('enter').content(this.gitAddPrompt + coloredInput)
 
 		this.renderFoundGitFiles(glob)
 		jumper.jumpTo('enter', -1)
@@ -99,9 +112,72 @@ class Interactive {
 		this.showingDiff = !this.showingDiff
 	}
 
+	onArrow(dir) {
+		if (['left', 'right'].includes(dir)) {
+			return
+		}
+		if (!this.showingIndicator && dir === 'up') {
+			return
+		}
+
+		let numFiles = this.getGitFilesMatching(keypress.input()).length
+
+		if (numFiles < 2) {
+			return
+		}
+
+		// go to the correct file based on input direction
+		if (!this.showingIndicator) {
+			this.fileIndex = 0
+			this.hideCursor()
+		} else if (dir === 'up') {
+			this.fileIndex -= 1
+		} else if (dir === 'down') {
+			this.fileIndex += 1
+		}
+
+		// return if the index is lower than 0 or greater than the number of files
+		if (this.fileIndex < 0) {
+			this.fileIndex = 0
+			jumper.render()
+			jumper.jumpTo('enter', -1)
+			this.showCursor()
+			this.showingIndicator = false
+			return
+		}
+		if (this.fileIndex > numFiles - 1) {
+			this.fileIndex = numFiles - 1
+			return
+		}
+
+		// erase any previously printed indicators
+		jumper.render()
+
+		// write a file indicator on the current file line
+		jumper.jumpTo(`gitFile${this.fileIndex}`, -1)
+		process.stdout.write(ansiEscapes.cursorForward(2))
+		process.stdout.write(chalk.blue('<'))
+
+		this.showingIndicator = true
+	}
+
+	showCursor() {
+		process.stdout.write(ansiEscapes.cursorShow)
+	}
+
+	hideCursor() {
+		process.stdout.write(ansiEscapes.cursorHide)
+	}
+
+	getIndicatedFile() {
+		let files = this.getGitFilesMatching(keypress.input())
+		let currentBlock = jumper.find(`gitFile${this.fileIndex}`)
+		return currentBlock.escapedText
+	}
+
 	showOriginalScreen() {
 		// remove scrollback so that scrolling up on the original screen doesn't show the diff
-		process.stdout.write(execSync( "clear && printf \'\\e[3J\'", { encoding: "utf8" }))
+		process.stdout.write(execSync("clear && printf \'\\e[3J\'", { encoding: 'utf8' }))
 		// switch to original screen
 		spawnSync('tput', ['rmcup'], { stdio: 'inherit' })
 
@@ -113,10 +189,19 @@ class Interactive {
 		// prevent rendering on each keypress
 		keypress.disable()
 
+		// if the indicator is showing, grab the diff for the chosen file.
+		// otherwise, grab the diff for the current glob entry
+		let diff
+		if (this.showingIndicator) {
+			let file = this.getIndicatedFile()
+			diff = execSync(`git -c color.ui=always diff -- ${file}`).toString('utf8')
+		} else {
+			let glob = keypress.input()
+			diff = execSync(`git -c color.ui=always diff -- *${glob}*`).toString('utf8')
+		}
+
 		// show diff on alternate screen
 		spawnSync('tput', ['smcup'], { stdio: 'inherit' })
-		let glob = keypress.input()
-		let diff = execSync(`git -c color.ui=always diff -- *${glob}*`).toString('utf8')
 		jumper.cursorTo(0, 0)
 		console.log(diff)
 
@@ -125,10 +210,16 @@ class Interactive {
 	}
 
 	renderAddSuccess() {
-		jumper.reset()
-		let glob = keypress.input()
+		// if the indicator is showing, only add that specific file.
+		// otherwise, add all files matching the given glob
+		if (this.showingIndicator) {
+			this.addFiles = [this.getIndicatedFile()]
+		} else {
+			let glob = keypress.input()
+			this.addFiles = this.getGitFilesMatching(glob)
+		}
 
-		this.addFiles = this.getGitFilesMatching(glob).split('\n').filter(file => file !== '')
+		jumper.reset()
 
 		jumper.block(chalk.green('Added files:'), 'found')
 		for (let i = 0; i < this.addFiles.length; i++) {
@@ -192,9 +283,14 @@ class Interactive {
 	}
 
 	renderFoundGitFiles(glob = '') {
-		let gitFiles = this.getGitFilesMatching(glob)
+		// remove previous search
+		jumper.removeAllMatching(/gitFile.*/)
 
-		jumper.find('files').content(chalk.red(gitFiles))
+		// create a new block for each file
+		let gitFiles = this.getGitFilesMatching(glob)
+		for (let i = 0; i < gitFiles.length; i++) {
+			jumper.block(chalk.red(gitFiles[i]), `gitFile${i}`)
+		}
 		jumper.render()
 	}
 
@@ -210,7 +306,7 @@ class Interactive {
 			files = ''
 		}
 
-		return files
+		return files.split('\n').filter(file => file !== '')
 	}
 
 	exitBeforeAdd() {
