@@ -3,10 +3,8 @@ const spawnSync = require('child_process').spawnSync
 const chalk = require('chalk')
 const ansiEscapes = require('ansi-escapes')
 const debounce = require('lodash.debounce')
-// const keypress = require('terminal-keypress')
-// const jumper = require('terminal-jumper')
-const keypress = require('../../terminal-keypress')
-const jumper = require('../../terminal-jumper')
+const keypress = require('terminal-keypress')
+const jumper = require('terminal-jumper')
 
 class Interactive {
 	constructor() {
