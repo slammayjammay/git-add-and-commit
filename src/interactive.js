@@ -69,7 +69,6 @@ class Interactive {
 		keypress.on('tab', this.onTab)
 
 		keypress.once('return', () => {
-			this.hack = true
 			keypress.removeListener('keypress', this.onType)
 			keypress.removeListener('tab', this.onTab)
 			this.renderAddSuccess()
@@ -77,8 +76,8 @@ class Interactive {
 		})
 	}
 
-	onType() {
-		if (this.hack) {
+	onType(char, key) {
+		if (['left', 'right', 'up', 'down', 'tab', 'return'].includes(key.name)) {
 			return
 		}
 
@@ -93,10 +92,8 @@ class Interactive {
 	onTab() {
 		if (this.showingDiff) {
 			this.showOriginalScreen()
-			this.hack = false
 		} else {
 			this.showAlternateScreen()
-			this.hack = true
 		}
 
 		this.showingDiff = !this.showingDiff
