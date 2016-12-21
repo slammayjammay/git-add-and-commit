@@ -293,7 +293,7 @@ class Interactive {
 	}
 
 	getGitFilesMatching(glob) {
-		let getModified = 'git diff --name-only'
+		let getModified = 'git ls-files --modified'
 		let getUntracked = 'git ls-files --other --exclude-standard'
 		let command = `{ ${getModified}; ${getUntracked}; } | sort | uniq | grep '${glob}' 2> /dev/null`
 
