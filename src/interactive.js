@@ -3,6 +3,7 @@ const spawnSync = require('child_process').spawnSync
 const chalk = require('chalk')
 const ansiEscapes = require('ansi-escapes')
 const debounce = require('lodash.debounce')
+const gitFiles = require('git-files')
 const keypress = require('terminal-keypress')
 const jumper = require('terminal-jumper')
 
@@ -285,26 +286,17 @@ class Interactive {
 		jumper.removeAllMatching(/gitFile\d+/)
 
 		// create a new block for each file
-		let gitFiles = this.getGitFilesMatching(glob)
-		for (let i = 0; i < gitFiles.length; i++) {
-			jumper.block(chalk.red(gitFiles[i]), `gitFile${i}`)
+		let files = this.getGitFilesMatching(glob)
+		for (let i = 0; i < files.length; i++) {
+			jumper.block(chalk.red(files[i]), `gitFile${i}`)
 		}
 		jumper.render()
 	}
 
 	getGitFilesMatching(glob) {
-		let getModified = 'git ls-files --modified'
-		let getUntracked = 'git ls-files --other --exclude-standard'
-		let command = `{ ${getModified}; ${getUntracked}; } | sort | uniq | grep '${glob}' 2> /dev/null`
-
-		let files
-		try {
-			files = execSync(command).toString('utf8')
-		} catch (e) {
-			files = ''
-		}
-
-		return files.split('\n').filter(file => file !== '')
+		let files = gitFiles.all('relative').sort()
+		let regex = new RegExp(glob, 'i')
+		return files.filter(file => regex.test(file))
 	}
 
 	exitBeforeAdd() {
