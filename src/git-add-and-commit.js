@@ -1,5 +1,6 @@
 const join = require('path').join
 const execSync = require('child_process').execSync
+const gitFiles = require('git-files')
 const Interactive = require('./interactive')
 
 /**
@@ -7,7 +8,7 @@ const Interactive = require('./interactive')
  * @class
  */
 class GitAddAndCommit {
-	constructor(options) {
+	constructor(options = {}) {
 		if (options.help) {
 			this.showHelpScreen()
 		} else if (options.interactive) {
@@ -18,15 +19,14 @@ class GitAddAndCommit {
 	}
 
 	/**
-	* Attempts to add and commit. Errors out in a non-ugly way.
-	*/
+	 * Attempts to add and commit. Errors out in a non-ugly way.
+	 */
 	normal() {
-		let alreadyStaged = execSync('git diff --cached --name-only').toString('utf8')
-		let stagedFiles = alreadyStaged.trim().split('\n').filter(file => file !== '')
+		let stagedFiles = gitFiles.staged('relative')
+		let stageWarning = stagedFiles.length > 0
 
-		if (alreadyStaged) {
-			// ignore all files that have already been staged, then stage them after
-			// this commit
+		if (stageWarning) {
+			// ignore all files that have already been staged, then stage them after this commit
 			process.stdout.write('There are file(s) already staged for commit. Resetting staged files...')
 			for (let file of stagedFiles) {
 				execSync(`git reset ${file}`)
@@ -36,14 +36,18 @@ class GitAddAndCommit {
 
 		try {
 			let args = process.argv.slice(2)
-			let fileGlob = args[0]
+			let glob = args[0]
 			let commitMessage = args[1]
 
-			execSync(`git add -- *${fileGlob}*`)
-			execSync(`git commit -m "${commitMessage}"`)
+			let files = this.getGitFilesMatching(glob)
+			for (let file of files) {
+				execSync(`git add ${file}`)
+			}
 
+			execSync(`git commit -m "${commitMessage}"`)
 			console.log('Commit successful.')
-			if (alreadyStaged) {
+
+			if (stageWarning) {
 				process.stdout.write('Re-adding previously staged files...')
 				for (let file of stagedFiles) {
 					execSync(`git add ${file}`)
@@ -52,7 +56,7 @@ class GitAddAndCommit {
 			}
 		} catch (e) {
 			console.log('Encountered error -- aborting.')
-			process.stdin.write('Reset added files...')
+			process.stdin.write('Resetting added files...')
 			execSync('git reset .')
 			process.stdin.write('Done.')
 			console.log()
@@ -60,8 +64,18 @@ class GitAddAndCommit {
 	}
 
 	/**
-	* Shows the help screen.
-	*/
+	 * Copy-pasted from interactive.js.
+	 * TODO: There's probably a better way.
+	 */
+	 getGitFilesMatching(glob) {
+ 		let files = gitFiles.all('relative').sort()
+ 		let regex = new RegExp(glob, 'i')
+ 		return files.filter(file => regex.test(file))
+ 	}
+
+	/**
+ 	 * Shows the help screen.
+   */
 	showHelpScreen() {
 		let helpFile = join(__dirname, './help.txt')
 		let helpScreen = execSync(`cat ${helpFile}`)
