@@ -169,9 +169,8 @@ class Interactive {
 	}
 
 	getIndicatedFile() {
-		let files = this.getGitFilesMatching(keypress.input())
-		let currentBlock = jumper.find(`gitFile${this.fileIndex}`)
-		return currentBlock.escapedText
+		let currentLine = jumper.find(`gitFile${this.fileIndex}`).escapedText
+		return currentLine.trim().split(' ')[1]
 	}
 
 	showOriginalScreen() {
@@ -285,10 +284,20 @@ class Interactive {
 		// remove previous search
 		jumper.removeAllMatching(/gitFile\d+/)
 
-		// create a new block for each file
-		let files = this.getGitFilesMatching(glob)
-		for (let i = 0; i < files.length; i++) {
-			jumper.block(chalk.red(files[i]), `gitFile${i}`)
+		let allMatches = {
+			untracked: gitFiles.untracked('relative').filter(file => new RegExp(glob, 'i').test(file)),
+			modified: gitFiles.modified('relative').filter(file => new RegExp(glob, 'i').test(file)),
+			deleted: gitFiles.deleted('relative').filter(file => new RegExp(glob, 'i').test(file))
+		}
+
+		let counter = 0
+
+		for (let group of Object.keys(allMatches)) {
+			for (let file of allMatches[group]) {
+				let text = `  ${chalk.bold.gray(`(${group})`)} ${chalk.red(file)}`
+				jumper.block(text, `gitFile${counter}`)
+				counter += 1
+			}
 		}
 		jumper.render()
 	}
