@@ -11,27 +11,8 @@ Provide the file glob you want to commit, followed by the commit message. Note
 that `git-add-and-commit` will add all files that match the given glob.
 
 ```shell
-$ gac index "Commit all files with 'index' in their name."
+$ gac index "Commit all 'index' files"
 ```
-There's also an interactive version, that will show all found files matching a
-given glob.
+There's also an interactive version, that will show all git files matching a given glob. Pressing tab will show a diff for all selected files. You can select a single file by using the arrow keys.
 
-```shell
-$ gac -i
-Enter a file glob: ind
-
-Files Added:
-index.html
-src/js/index.js
-src/css/index.css
-
-----------------
-
-Commit message: "Commit all 'index' files."
-
-----------------
-
-Files committed successfully.
-
-$
-```
+<img src="./demos/demo.gif"></img>
