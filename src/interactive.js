@@ -155,7 +155,7 @@ class Interactive {
 		// write a file indicator on the current file line
 		jumper.jumpTo(`gitFile${this.fileIndex}`, -1)
 		process.stdout.write(ansiEscapes.cursorForward(2))
-		process.stdout.write(chalk.blue('<'))
+		process.stdout.write(chalk.blue('⇦'))
 
 		this.showingIndicator = true
 	}
