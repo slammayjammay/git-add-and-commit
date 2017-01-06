@@ -192,10 +192,15 @@ class Interactive {
 		let diff
 		if (this.showingIndicator) {
 			let file = this.getIndicatedFile()
-			diff = execSync(`git -c color.ui=always diff -- ${file}`).toString('utf8')
+			diff = execSync(`git -c color.ui=always diff ${file}`).toString('utf8')
 		} else {
-			let glob = keypress.input()
-			diff = execSync(`git -c color.ui=always diff -- *${glob}*`).toString('utf8')
+			let files = this.getGitFilesMatching(keypress.input())
+
+			// grab the diff of each file that matches the input glob
+			diff = ''
+			for (let file of files) {
+				diff += execSync(`git -c color.ui=always diff ${file}`).toString('utf8')
+			}
 		}
 
 		// show diff on alternate screen
