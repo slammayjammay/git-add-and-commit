@@ -26,20 +26,25 @@ class Interactive {
 	}
 
 	run() {
-		let addedFiles = execSync('git diff --cached --name-only').toString('utf8').trim()
+		let stagedFiles = gitFiles.staged()
 
-		if (addedFiles) {
-			this.showAlreadyAddedFilesWarning()
+		if (stagedFiles.length > 0) {
+			this.showAlreadyAddedFilesWarning(stagedFiles)
 		} else {
 			this.showGlobPrompt()
 		}
 	}
 
-	showAlreadyAddedFilesWarning() {
-		let warningMessage = chalk.bold('There are file(s) already staged for commit. Continue (y/n)? ')
-		jumper.block(warningMessage, 'addWarning')
+	showAlreadyAddedFilesWarning(stagedFiles) {
+		jumper.block('There are file(s) already staged for commit.')
+		for (let file of stagedFiles) {
+			jumper.block(chalk.red(file))
+		}
+		jumper.break()
+		jumper.block(chalk.bold('These file(s) will be committed. Continue? (y/n) '), 'warning')
+
 		jumper.render()
-		jumper.jumpTo('addWarning', -1)
+		jumper.jumpTo('warning', -1)
 		keypress.beginInput()
 
 		keypress.once('return', () => {
@@ -47,7 +52,7 @@ class Interactive {
 			jumper.erase()
 
 			if (['y', 'yes', 'Y', 'Yes'].includes(answer)) {
-				jumper.remove('addWarning')
+				jumper.reset()
 				this.showGlobPrompt()
 			} else if (['n', 'no', 'N', 'No'].includes(answer)) {
 				keypress.exit()
