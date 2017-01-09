@@ -1,3 +1,4 @@
+//
 const execSync = require('child_process').execSync
 const spawnSync = require('child_process').spawnSync
 const chalk = require('chalk')
@@ -12,7 +13,9 @@ class Interactive {
 		this.fileIndex = 0
 		this.showingIndicator = false
 		this.showingDiff = false
-		this.gitAddPrompt = `${chalk.green('Enter a file glob')} ${chalk.gray('(press tab to toggle diff)')}${chalk.green(': ')}`
+
+		this.instructions = `${chalk.gray('Arrow keys to navigate')}\n${chalk.gray('Tab to show diff of selected file(s)')}`
+		this.gitAddPrompt = `${chalk.green('Enter a file glob: ')}`
 
 		this.onType = debounce(this.onType.bind(this), 200)
 		this.onTab = this.onTab.bind(this)
@@ -66,6 +69,8 @@ class Interactive {
 		keypress.disableBehavior('tab right left')
 
 		// show prompt and available files
+		jumper.block(this.instructions, 'instructions')
+		jumper.break()
 		jumper.block(this.gitAddPrompt, 'enter')
 		jumper.break()
 		jumper.block(chalk.green('Files found:'), 'found')
