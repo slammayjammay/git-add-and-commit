@@ -22,6 +22,12 @@ class GitAddAndCommit {
 	 * Attempts to add and commit. Errors out in a non-ugly way.
 	 */
 	normal() {
+		let args = process.argv.slice(2)
+		if (args.length < 2) {
+			console.log('File glob and commit message required. See help screen for correct usage.')
+			return
+		}
+
 		let stagedFiles = gitFiles.staged('relative')
 		let stageWarning = stagedFiles.length > 0
 
@@ -35,7 +41,6 @@ class GitAddAndCommit {
 		}
 
 		try {
-			let args = process.argv.slice(2)
 			let glob = args[0]
 			let commitMessage = args[1]
 
