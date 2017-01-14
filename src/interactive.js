@@ -4,8 +4,10 @@ const chalk = require('chalk')
 const ansiEscapes = require('ansi-escapes')
 const debounce = require('lodash.debounce')
 const gitFiles = require('git-files')
+const gitDiffGlob = require('git-diff-glob')
 const keypress = require('terminal-keypress')
 const jumper = require('terminal-jumper')
+const pager = require('node-pager')
 
 class Interactive {
 	constructor() {
@@ -112,12 +114,16 @@ class Interactive {
 
 	onTab() {
 		if (this.showingDiff) {
-			this.showOriginalScreen()
-		} else {
-			this.showAlternateScreen()
+			return
 		}
 
-		this.showingDiff = !this.showingDiff
+		this.showingDiff = true
+
+		let file = this.showingIndicator ? this.getIndicatedFile() : keypress.input()
+		let diff = gitDiffGlob(file)
+		let pagerExitFn = () => this.showingDiff = false
+
+		pager(diff).then(pagerExitFn)
 	}
 
 	onArrow(dir) {
@@ -180,45 +186,6 @@ class Interactive {
 	getIndicatedFile() {
 		let currentLine = jumper.find(`gitFile${this.fileIndex}`).escapedText
 		return currentLine.trim().split(' ')[1]
-	}
-
-	showOriginalScreen() {
-		// remove scrollback so that scrolling up on the original screen doesn't show the diff
-		process.stdout.write(execSync("clear && printf \'\\e[3J\'", { encoding: 'utf8' }))
-		// switch to original screen
-		spawnSync('tput', ['rmcup'], { stdio: 'inherit' })
-
-		jumper.jumpTo('enter', -1)
-		keypress.enable()
-	}
-
-	showAlternateScreen() {
-		// prevent rendering on each keypress
-		keypress.disable()
-
-		// if the indicator is showing, grab the diff for the chosen file.
-		// otherwise, grab the diff for the current glob entry
-		let diff
-		if (this.showingIndicator) {
-			let file = this.getIndicatedFile()
-			diff = execSync(`git -c color.ui=always diff ${file}`).toString('utf8')
-		} else {
-			let files = this.getGitFilesMatching(keypress.input())
-
-			// grab the diff of each file that matches the input glob
-			diff = ''
-			for (let file of files) {
-				diff += execSync(`git -c color.ui=always diff ${file}`).toString('utf8')
-			}
-		}
-
-		// show diff on alternate screen
-		spawnSync('tput', ['smcup'], { stdio: 'inherit' })
-		jumper.cursorTo(0, 0)
-		console.log(diff)
-
-		// make sure to enable a second tab after disabling all events
-		keypress.once('tab', this.onTab)
 	}
 
 	renderAddSuccess() {
