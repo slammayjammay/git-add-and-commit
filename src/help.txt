@@ -1,16 +1,19 @@
 [1mDESCRIPTION[22m
   This command quickens the commit process for individual files. Files can be
   added by giving globs, or substrings of the desired file. For example, the
-  glob "ind" would find all files that contain "ind" in them.
+  glob ind would find all files that contain ind in them. Files will be
+  matched case-insensitively by default.
 
 [1mUSAGE[22m
   gac [options]
   gac <path> <message>
 
 [1mOPTIONS[22m
-  -h, --help          Display this help screen.
-  -i, --interactive   Interactively find and commit files.
+  -c, --case-sensitive    Match files case-sensitively.
+  -h, --help              Display this help screen.
+  -i, --interactive       Interactively find and commit files.
 
 [1mEXAMPLES[22m
-  gac README.md "Add README"
-  gac index "Commit all index files"
+  gac README.md Add README
+  gac ind Modify index.js
+
