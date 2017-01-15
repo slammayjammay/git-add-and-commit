@@ -10,7 +10,8 @@ const jumper = require('terminal-jumper')
 const pager = require('node-pager')
 
 class Interactive {
-	constructor() {
+	constructor(options = {}) {
+		this.options = options
 		this.fileIndex = 0
 		this.showingIndicator = false
 		this.showingDiff = false
@@ -120,7 +121,9 @@ class Interactive {
 		this.showingDiff = true
 
 		let file = this.showingIndicator ? this.getIndicatedFile() : keypress.input()
-		let diff = gitDiffGlob(file, { caseInsensitive: true })
+		let diff = gitDiffGlob(file, {
+			caseInsensitive: this.options.caseInsensitive
+		})
 		let pagerExitFn = () => this.showingDiff = false
 
 		pager(diff).then(pagerExitFn)
@@ -265,10 +268,12 @@ class Interactive {
 		// remove previous search
 		jumper.removeAllMatching(/gitFile\d+/)
 
+		let i = this.options.caseInsensitive ? 'i' : ''
+
 		let allMatches = {
-			untracked: gitFiles.untracked('relative').filter(file => new RegExp(glob, 'i').test(file)),
-			modified: gitFiles.modified('relative').filter(file => new RegExp(glob, 'i').test(file)),
-			deleted: gitFiles.deleted('relative').filter(file => new RegExp(glob, 'i').test(file))
+			untracked: gitFiles.untracked('relative').filter(file => new RegExp(glob, i).test(file)),
+			modified: gitFiles.modified('relative').filter(file => new RegExp(glob, i).test(file)),
+			deleted: gitFiles.deleted('relative').filter(file => new RegExp(glob, i).test(file))
 		}
 
 		let counter = 0

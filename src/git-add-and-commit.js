@@ -9,10 +9,12 @@ const Interactive = require('./interactive')
  */
 class GitAddAndCommit {
 	constructor(options = {}) {
+		this.options = options
+
 		if (options.help) {
 			this.showHelpScreen()
 		} else if (options.interactive) {
-			new Interactive().run()
+			new Interactive(options).run()
 		} else {
 			this.normal()
 		}
@@ -73,8 +75,8 @@ class GitAddAndCommit {
 	 * TODO: There's probably a better way.
 	 */
 	 getGitFilesMatching(glob) {
- 		let files = gitFiles.all('relative').sort()
- 		let regex = new RegExp(glob, 'i')
+ 		let files = gitFiles.all('relative')
+ 		let regex = new RegExp(glob, this.options.caseInsensitive ?  'i' : '')
  		return files.filter(file => regex.test(file))
  	}
 
