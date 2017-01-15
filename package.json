@@ -18,7 +18,7 @@
     "ansi-escapes": "^1.4.0",
     "chalk": "^1.1.3",
     "get-cursor-position": "^1.0.3",
-    "git-diff-glob": "^0.1.1",
+    "git-diff-glob": "^0.2.0",
     "git-files": "^0.2.2",
     "lodash.debounce": "^4.0.8",
     "node-pager": "^0.2.2",
