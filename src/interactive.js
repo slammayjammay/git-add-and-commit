@@ -120,7 +120,7 @@ class Interactive {
 		this.showingDiff = true
 
 		let file = this.showingIndicator ? this.getIndicatedFile() : keypress.input()
-		let diff = gitDiffGlob(file)
+		let diff = gitDiffGlob(file, { caseInsensitive: true })
 		let pagerExitFn = () => this.showingDiff = false
 
 		pager(diff).then(pagerExitFn)
