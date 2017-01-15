@@ -21,6 +21,7 @@
     "git-diff-glob": "^0.2.0",
     "git-files": "^0.2.2",
     "lodash.debounce": "^4.0.8",
+    "minimist": "^1.2.0",
     "node-pager": "^0.2.2",
     "strip-ansi": "^3.0.1",
     "terminal-jumper": "^0.2.0",
