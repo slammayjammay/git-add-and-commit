@@ -29,7 +29,7 @@
     "node-pager": "^0.3.0",
     "strip-ansi": "^3.0.1",
     "terminal-jumper": "^0.3.0",
-    "terminal-keypress": "^0.4.1"
+    "terminal-keypress": "^0.4.3"
   },
   "keywords": [
     "git",
