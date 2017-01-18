@@ -3,7 +3,7 @@
 
 const join = require('path').join
 const minimist = require('minimist')
-const GitAddAndCommit = require(join(__dirname, '../src/git-add-and-commit'))
+const GitAddAndCommit = require(join(__dirname, '../'))
 
 let args = Object.keys(minimist(process.argv.slice(2)))
 let options = {
