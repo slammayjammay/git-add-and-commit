@@ -76,7 +76,7 @@ class GitAddAndCommit {
 	 */
 	 getGitFilesMatching(glob) {
  		let files = gitFiles.all('relative')
- 		let regex = new RegExp(glob, this.options.caseInsensitive ?  'i' : '')
+ 		let regex = new RegExp(glob, this.options.caseSensitive ?  '' : 'i')
  		return files.filter(file => regex.test(file))
  	}
 

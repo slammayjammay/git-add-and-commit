@@ -122,7 +122,7 @@ class Interactive {
 
 		let file = this.showingIndicator ? this.getIndicatedFile() : keypress.input()
 		let diff = gitDiffGlob(file, {
-			caseInsensitive: this.options.caseInsensitive
+			caseSensitive: this.options.caseSensitive
 		})
 		let pagerExitFn = () => this.showingDiff = false
 
@@ -268,12 +268,12 @@ class Interactive {
 		// remove previous search
 		jumper.removeAllMatching(/gitFile\d+/)
 
-		let i = this.options.caseInsensitive ? 'i' : ''
+		let i = this.options.caseSensitive ? '' : 'i'
 
 		let allMatches = {
-			untracked: gitFiles.untracked('relative').filter(file => new RegExp(glob, i).test(file)),
 			modified: gitFiles.modified('relative').filter(file => new RegExp(glob, i).test(file)),
-			deleted: gitFiles.deleted('relative').filter(file => new RegExp(glob, i).test(file))
+			deleted: gitFiles.deleted('relative').filter(file => new RegExp(glob, i).test(file)),
+			untracked: gitFiles.untracked('relative').filter(file => new RegExp(glob, i).test(file))
 		}
 
 		let counter = 0
