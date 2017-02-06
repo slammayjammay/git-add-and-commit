@@ -5,17 +5,21 @@ const join = require('path').join
 const minimist = require('minimist')
 const GitAddAndCommit = require(join(__dirname, '../'))
 
-let args = Object.keys(minimist(process.argv.slice(2)))
-let options = {}
+const CLI_OPTIONS = ['caseSensitive', 'help', 'interactive']
 
-if (args.includes('h') || args.includes('help')) {
-	options.help = true
-}
-if (args.includes('i') || args.includes('interactive')) {
-	options.interactive = true
-}
-if (args.includes('c') || args.includes('case-sensitive')) {
-	options.caseSensitive = true
+let argv = minimist(process.argv.slice(2), {
+	alias: {
+		c: 'caseSensitive',
+		h: 'help',
+		i: 'interactive',
+		'case-sensitive': 'caseSensitive'
+	},
+	boolean: CLI_OPTIONS
+})
+
+let options = {}
+for (let option of CLI_OPTIONS) {
+	options[option] = argv[option]
 }
 
 new GitAddAndCommit(options)
