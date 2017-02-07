@@ -5,17 +5,18 @@ const join = require('path').join
 const minimist = require('minimist')
 const GitAddAndCommit = require(join(__dirname, '../'))
 
+//
+// Set things up for minimist
+//
 let booleans = {
 	c: 'caseSensitive',
 	h: 'help',
 	i: 'interactive'
 }
-
 let needArgs = {
 	e: 'except',
 	o: 'only'
 }
-
 const CLI_OPTIONS = Object.assign({}, booleans, needArgs)
 
 let argv = minimist(process.argv.slice(2), {
@@ -23,9 +24,14 @@ let argv = minimist(process.argv.slice(2), {
 	boolean: Object.keys(booleans).map(key => booleans[key])
 })
 
+//
+// Setup options object
+//
 let options = {}
 setupOptions(options)
-parseFilesToFind(options)
+parseFileTypesToFind(options)
+options.globs = argv._
+
 new GitAddAndCommit(options)
 
 //
@@ -37,7 +43,7 @@ function setupOptions(options) {
 	}
 }
 
-function parseFilesToFind(options) {
+function parseFileTypesToFind(options) {
 	let _letterToFileMap = {
 		d: 'deleted',
 		m: 'modified',
@@ -64,5 +70,5 @@ function parseFilesToFind(options) {
 		find[_letterToFileMap[file[0].toLowerCase()]] = true
 	}
 
-	options.find = find
+	options.find = Object.keys(find)
 }
