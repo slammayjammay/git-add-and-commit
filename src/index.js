@@ -1,7 +1,10 @@
 const join = require('path').join
 const execSync = require('child_process').execSync
+const chalk = require('chalk')
 const gitFiles = require('git-files')
+const jumper = require('terminal-jumper')
 const Interactive = require('./interactive')
+const utils = require('./utils')
 
 /**
  * Reads a file glob and a commit message, and commits to git.
@@ -11,74 +14,98 @@ class GitAddAndCommit {
 	constructor(options = {}) {
 		this.options = options
 
-		if (options.help) {
+		if (options.help || options.args.length === 0) {
 			this.showHelpScreen()
 		} else if (options.interactive) {
 			new Interactive(options).run()
 		} else {
-			this.normal()
+			this.run()
 		}
 	}
 
 	/**
-	 * Attempts to add and commit. Errors out in a non-ugly way.
+	 * Finds all files that match the given globs and options given by the user.
+	 * If there are already staged files, it promps the user to continue. Tries
+	 * to stage all matched files and commits. If there is an error, it lets the
+	 * user know and resets all files that were staged successfully.
 	 */
-	normal() {
-		let args = process.argv.slice(2)
-		if (args.length < 2) {
+	run() {
+		if (this.options.args.length < 2) {
 			console.log('File glob and commit message required. See help screen for correct usage.')
 			return
 		}
 
-		let stagedFiles = gitFiles.staged('relative')
-		let stageWarning = stagedFiles.length > 0
+		this.globs = this.options.args.slice()
+		this.message = this.globs.pop()
 
-		if (stageWarning) {
-			// ignore all files that have already been staged, then stage them after this commit
-			process.stdout.write('There are file(s) already staged for commit. Resetting staged files...')
-			for (let file of stagedFiles) {
-				execSync(`git reset ${file}`)
-			}
-			console.log('Done.')
-		}
+		// find all files based on the given globs and options
+		let files = utils.getFilesOfTypes(this.options.find)
+		this.matches = utils.matchGlobsAgainstFiles(files, this.globs, {
+			caseSensitive: this.options.caseSensitive
+		})
 
-		try {
-			let glob = args[0]
-			let commitMessage = args[1]
-
-			let files = this.getGitFilesMatching(glob)
-			for (let file of files) {
+		this.checkForStagedFiles().then(shouldContinue => {
+			this.matches.forEach(file => {
 				execSync(`git add ${file}`)
-			}
+			})
 
-			execSync(`git commit -m "${commitMessage}"`)
-			console.log('Commit successful.')
+			execSync(`git commit -m "${this.message}"`)
+			console.log(`Commit successful.`)
+		}).catch(() => {
+			console.log(`Error encountered -- aborting.`)
 
-			if (stageWarning) {
-				process.stdout.write('Re-adding previously staged files...')
-				for (let file of stagedFiles) {
-					execSync(`git add ${file}`)
-				}
-				console.log('Done.')
-			}
-		} catch (e) {
-			console.log('Encountered error -- aborting.')
-			process.stdin.write('Resetting added files...')
-			execSync('git reset .')
-			process.stdin.write('Done.')
-			console.log()
-		}
+			try {
+				this.matches.forEach(file => {
+					execSync(`git reset ${file}`)
+				})
+			} catch (e) {}
+		})
 	}
 
 	/**
-	 * Copy-pasted from interactive.js.
-	 * TODO: There's probably a better way.
+	 * If there are already staged files that don't match any of the given globs,
+	 * prints them to the screen and prompts the user to continue with the commit.
 	 */
-	 getGitFilesMatching(glob) {
- 		let files = gitFiles.all('relative')
- 		let regex = new RegExp(glob, this.options.caseSensitive ?  '' : 'i')
- 		return files.filter(file => regex.test(file))
- 	}
+	checkForStagedFiles() {
+		return new Promise((resolve, reject) => {
+			let extraStagedFiles = gitFiles.staged('relative').filter(file => {
+				return !this.matches.includes(file)
+			})
+
+			if (extraStagedFiles.length === 0) {
+				resolve()
+			} else {
+				jumper.block(chalk.bold(`There are files already staged for commit but do not match the glob(s) given.`))
+				extraStagedFiles.forEach(file => jumper.block(`  ${chalk.green(file)}`))
+				jumper.break()
+
+				jumper.block(chalk.bold(`Continue? (y/n): `), 'continue')
+				jumper.render()
+				jumper.jumpTo('continue', -1)
+
+				process.stdin.on('data', (data) => {
+					process.stdin.end()
+					let answer = data.toString('utf8').trim().toLowerCase()
+
+					true && ['yes', 'y'].includes(answer) ? resolve() : reject()
+
+					// this doesn't work. node will throw a `cannot read property 'includes' of undefined`. Bonkers.
+					// ['yes', 'y'].includes(answer) ? resolve() : reject()
+
+					// there is also this way as a workaround
+					// let nothing = ['yes', 'y'].includes(answer) ? resolve() : reject()
+
+					// what's another way...let me see...
+
+					// this one's pretty cool. I still think there's an even worse way to do it...
+					// !!['yes', 'y'].includes(answer) ? resolve() : reject()
+
+					// Haha! I found you.
+					// eval(`['yes', 'y'].includes(answer) ? resolve() : reject()`)
+				})
+			}
+		})
+	}
 
 	/**
  	 * Shows the help screen.
