@@ -2,15 +2,39 @@ const gitFiles = require('git-files')
 const minimatch = require('minimatch')
 
 /**
+ * Returns all git files that match the given types, e.g. 'staged', 'modified'
+ * in the form of a map -- fileType: fileName.
+ * @param {array} fileTypes - The types of gitFiles to look for, e.g. 'staged'.
+ * @param {string} pathType - The type of path for files (relative, absolute, etc.).
+ * @return {object}
+ */
+const getFilesOfTypes = (fileTypes, pathType = 'relative') => {
+	let fileMap = {}
+
+	for (let fileType of fileTypes) {
+		fileMap[fileType] = fileMap[fileType] || []
+		fileMap[fileType].push(...gitFiles[fileType](pathType))
+	}
+
+	return fileMap
+}
+
+/**
+ * Similar to getFilesOfTypes, but returns a unique array of files.
  * @param {array} fileTypes - The types of gitFiles to look for, e.g. 'staged'.
  * @param {string} pathType - The type of path for files (relative, absolute, etc.).
  * @return {array}
  */
-const getFilesOfTypes = (fileTypes, pathType = 'relative') => {
+const getUniqueFilesOfTypes = (fileTypes, pathType = 'relative') => {
+	let fileMap = getFilesOfTypes(fileTypes, pathType)
 	let files = []
 
-	for (let fileType of fileTypes) {
-		files.push(...gitFiles[fileType](pathType))
+	for (let fileArray of Object.keys(fileMap).map(key => fileMap[key])) {
+		for (let file of fileArray) {
+			if (!files.includes(file)) {
+				files.push(file)
+			}
+		}
 	}
 
 	return files
@@ -59,5 +83,6 @@ function fileMatchesGlob(file, glob, options = {}) {
 
 module.exports = {
 	getFilesOfTypes,
+	getUniqueFilesOfTypes,
 	matchGlobsAgainstFiles
 }
