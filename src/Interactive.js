@@ -259,11 +259,15 @@ class Interactive {
 	}
 
 	complete() {
-		jumper.break()
-		jumper.block('---------------------------------------------')
-		jumper.break()
-		jumper.block('Files committed successfully.')
-		jumper.render()
+		if (this.options.silent) {
+			jumper.erase()
+		} else {
+			jumper.break()
+			jumper.block('---------------------------------------------')
+			jumper.break()
+			jumper.block('Files committed successfully.')
+			jumper.render()
+		}
 
 		keypress.exit()
 	}
