@@ -3,7 +3,7 @@ const execSync = require('child_process').execSync
 const chalk = require('chalk')
 const gitFiles = require('git-files')
 const jumper = require('terminal-jumper')
-const Interactive = require('./interactive')
+const Interactive = require('./Interactive')
 const utils = require('./utils')
 
 /**
