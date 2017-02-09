@@ -1,5 +1,4 @@
 const execSync = require('child_process').execSync
-const spawnSync = require('child_process').spawnSync
 const chalk = require('chalk')
 const ansiEscapes = require('ansi-escapes')
 const debounce = require('lodash.debounce')
