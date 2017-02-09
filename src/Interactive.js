@@ -138,7 +138,7 @@ class Interactive {
 		}
 
 		let files = utils.getUniqueFilesOfTypes(this.options.find)
-		let matches = utils.matchGlobsAgainstFiles(files, this.globs, {
+		let matches = utils.matchGlobsAgainstFiles(files, ['*'], {
 			caseSensitive: this.options.caseSensitive
 		})
 		let numFiles = matches.length
@@ -277,7 +277,9 @@ class Interactive {
 	 * along with their git file type, e.g. 'staged', 'modified', etc.
 	 * @param {string} [glob] - The glob to match against files.
 	 */
-	renderFoundGitFiles(glob = '*') {
+	renderFoundGitFiles(glob) {
+		glob = glob || '*'
+
 		// remove previous search
 		jumper.removeAllMatching(/gitFile\d+/)
 
@@ -286,7 +288,7 @@ class Interactive {
 		let counter = 0
 
 		for (let type of types) {
-			let matches = utils.matchGlobsAgainstFiles(fileMap[type], glob, {
+			let matches = utils.matchGlobsAgainstFiles(fileMap[type], [glob], {
 				caseSensitive: this.options.caseSensitive
 			})
 
