@@ -40,7 +40,7 @@ class GitAddAndCommit {
 		this.message = this.globs.pop()
 
 		// find all files based on the given globs and options
-		let files = utils.getFilesOfTypes(this.options.find)
+		let files = utils.getUniqueFilesOfTypes(this.options.find)
 		this.matches = utils.matchGlobsAgainstFiles(files, this.globs, {
 			caseSensitive: this.options.caseSensitive
 		})
