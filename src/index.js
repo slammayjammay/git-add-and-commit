@@ -87,21 +87,8 @@ class GitAddAndCommit {
 					process.stdin.end()
 					let answer = data.toString('utf8').trim().toLowerCase()
 
-					true && ['yes', 'y'].includes(answer) ? resolve() : reject()
-
-					// this doesn't work. node will throw a `cannot read property 'includes' of undefined`. Bonkers.
-					// ['yes', 'y'].includes(answer) ? resolve() : reject()
-
-					// there is also this way as a workaround
-					// let nothing = ['yes', 'y'].includes(answer) ? resolve() : reject()
-
-					// what's another way...let me see...
-
-					// this one's pretty cool. I still think there's an even worse way to do it...
-					// !!['yes', 'y'].includes(answer) ? resolve() : reject()
-
-					// Haha! I found you.
-					// eval(`['yes', 'y'].includes(answer) ? resolve() : reject()`)
+					// without eval, node will throw a `cannot read property 'includes' of undefined`. Bonkers.
+					eval(`['yes', 'y'].includes(answer) ? resolve() : reject()`)
 				})
 			}
 		})
