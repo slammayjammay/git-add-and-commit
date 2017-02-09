@@ -8,6 +8,7 @@ const gitDiffGlob = require('git-diff-glob')
 const keypress = require('terminal-keypress')
 const jumper = require('terminal-jumper')
 const pager = require('node-pager')
+const utils = require('./utils')
 
 class Interactive {
 	constructor(options = {}) {
@@ -137,7 +138,11 @@ class Interactive {
 			return
 		}
 
-		let numFiles = this.getGitFilesMatching(keypress.input()).length
+		let files = utils.getUniqueFilesOfTypes(this.options.find)
+		let matches = utils.matchGlobsAgainstFiles(files, this.globs, {
+			caseSensitive: this.options.caseSensitive
+		})
+		let numFiles = matches.length
 
 		if (numFiles < 2) {
 			return
@@ -264,34 +269,39 @@ class Interactive {
 		keypress.exit()
 	}
 
-	renderFoundGitFiles(glob = '') {
+	/**
+	 * Finds all files that match the given glob and prints them to the screen,
+	 * along with their git file type, e.g. 'staged', 'modified', etc.
+	 * @param {string} [glob] - The glob to match against files.
+	 */
+	renderFoundGitFiles(glob = '*') {
 		// remove previous search
 		jumper.removeAllMatching(/gitFile\d+/)
 
-		let i = this.options.caseSensitive ? '' : 'i'
-
-		let allMatches = {
-			modified: gitFiles.modified('relative').filter(file => new RegExp(glob, i).test(file)),
-			deleted: gitFiles.deleted('relative').filter(file => new RegExp(glob, i).test(file)),
-			untracked: gitFiles.untracked('relative').filter(file => new RegExp(glob, i).test(file))
-		}
-
+		let fileMap = utils.getFilesOfTypes(this.options.find)
+		let types = Object.keys(fileMap)
 		let counter = 0
 
-		for (let group of Object.keys(allMatches)) {
-			for (let file of allMatches[group]) {
-				let text = `  ${chalk.bold.gray(`(${group})`)} ${chalk.red(file)}`
+		for (let type of types) {
+			let matches = utils.matchGlobsAgainstFiles(fileMap[type], glob, {
+				caseSensitive: this.options.caseSensitive
+			})
+
+			for (let file of matches) {
+				let text = `  ${chalk.bold.gray(`(${type})`)} ${chalk.red(file)}`
 				jumper.block(text, `gitFile${counter}`)
 				counter += 1
 			}
 		}
+
 		jumper.render()
 	}
 
 	getGitFilesMatching(glob) {
-		let files = gitFiles.all('relative').sort()
-		let regex = new RegExp(glob, 'i')
-		return files.filter(file => regex.test(file))
+		let files = utils.getUniqueFilesOfTypes(this.options.find)
+		return utils.matchGlobsAgainstFiles(files, [glob], {
+			caseSensitive: this.options.caseSensitive
+		})
 	}
 
 	exitBeforeAdd() {
