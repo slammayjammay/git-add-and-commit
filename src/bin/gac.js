@@ -30,7 +30,6 @@ let argv = minimist(process.argv.slice(2), {
 let options = {}
 setupOptions(options)
 parseFileTypesToFind(options)
-// options.args = argv._.slice()
 new GitAddAndCommit(argv._.slice(), options)
 
 //
