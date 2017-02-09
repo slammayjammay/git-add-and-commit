@@ -42,10 +42,16 @@ class GitAddAndCommit {
 		// find all files based on the given globs and options
 		let files = utils.getUniqueFilesOfTypes(this.options.find)
 		this.matches = utils.matchGlobsAgainstFiles(files, this.globs, {
-			caseSensitive: this.options.caseSensitive
+			caseSensitive: this.options.caseSensitive,
+			strict: this.options.strict
 		})
 
 		this.checkForStagedFiles().then(shouldContinue => {
+			if (this.matches.length === 0) {
+				console.log(`No matches found.`)
+				throw new Error(`No matches found.`)
+			}
+
 			this.matches.forEach(file => {
 				execSync(`git add ${file}`)
 			})

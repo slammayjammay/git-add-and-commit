@@ -64,7 +64,7 @@ function fileMatchesGlob(file, glob, options = {}) {
 	// for minimatch
 	options.nocase = !options.caseSensitive
 
-	let globsToTry = [
+	let globsToTry = options.strict ? [glob] : [
 		`*${glob}*`,
 		`**/*${glob}*`,
 		`**/*${glob}*/**/*`,

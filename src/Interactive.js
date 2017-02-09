@@ -139,7 +139,8 @@ class Interactive {
 
 		let files = utils.getUniqueFilesOfTypes(this.options.find)
 		let matches = utils.matchGlobsAgainstFiles(files, ['*'], {
-			caseSensitive: this.options.caseSensitive
+			caseSensitive: this.options.caseSensitive,
+			strict: this.options.strict
 		})
 		let numFiles = matches.length
 
@@ -289,7 +290,8 @@ class Interactive {
 
 		for (let type of types) {
 			let matches = utils.matchGlobsAgainstFiles(fileMap[type], [glob], {
-				caseSensitive: this.options.caseSensitive
+				caseSensitive: this.options.caseSensitive,
+				strict: this.options.strict
 			})
 
 			for (let file of matches) {
@@ -305,7 +307,8 @@ class Interactive {
 	getGitFilesMatching(glob) {
 		let files = utils.getUniqueFilesOfTypes(this.options.find)
 		return utils.matchGlobsAgainstFiles(files, [glob], {
-			caseSensitive: this.options.caseSensitive
+			caseSensitive: this.options.caseSensitive,
+			strict: this.options.strict
 		})
 	}
 

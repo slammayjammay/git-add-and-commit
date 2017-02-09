@@ -12,7 +12,8 @@ let booleans = {
 	c: 'caseSensitive',
 	h: 'help',
 	i: 'interactive',
-	s: 'silent'
+	s: 'silent',
+	S: 'strict'
 }
 let needArgs = {
 	e: 'except',
