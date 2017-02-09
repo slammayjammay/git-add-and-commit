@@ -15,10 +15,10 @@ class GitAddAndCommit {
 		this.options = options
 		this.args = args
 
-		if (options.help || args.length === 0) {
-			this.showHelpScreen()
-		} else if (options.interactive) {
+		if (options.interactive) {
 			new Interactive(options).run()
+		} else if (options.help || args.length === 0) {
+			this.showHelpScreen()
 		} else {
 			this.run()
 		}
