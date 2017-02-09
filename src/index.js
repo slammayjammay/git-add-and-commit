@@ -11,10 +11,11 @@ const utils = require('./utils')
  * @class
  */
 class GitAddAndCommit {
-	constructor(options = {}) {
+	constructor(args, options = {}) {
 		this.options = options
+		this.args = args
 
-		if (options.help || options.args.length === 0) {
+		if (options.help || args.length === 0) {
 			this.showHelpScreen()
 		} else if (options.interactive) {
 			new Interactive(options).run()
@@ -30,12 +31,12 @@ class GitAddAndCommit {
 	 * user know and resets all files that were staged successfully.
 	 */
 	run() {
-		if (this.options.args.length < 2) {
+		if (this.args.length < 2) {
 			console.log('File glob and commit message required. See help screen for correct usage.')
 			return
 		}
 
-		this.globs = this.options.args.slice()
+		this.globs = this.args.slice()
 		this.message = this.globs.pop()
 
 		// find all files based on the given globs and options
