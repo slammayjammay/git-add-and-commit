@@ -1,27 +1,41 @@
-const execSync = require('child_process').execSync
+const fs = require('fs')
 const chalk = require('chalk')
 
-const outputFile = 'src/help.txt'
+const outputFile = 'help.txt'
+const B = (text) => chalk.bold(text)
 
-let txt = `\
-${chalk.bold('DESCRIPTION')}
-  This command quickens the commit process for individual files. Files can be
-  added by giving globs, or substrings of the desired file. For example, the
-  glob "ind" would find all files that contain "ind" in them. Files will be
-  matched case-insensitively by default.
+let text = `\
+${B('DESCRIPTION')}
+	This command quickens the commit process for individual files. Files can be
+	added by providing a list of file globs. For example, ${B('"src/**/*"')} will match
+	all files of all subfolders of ${B('"src/"')}. If the given glob is a substring of
+	a filename, a match will always be made. By default, all matches are made
+	case-insensitively.
 
-${chalk.bold('USAGE')}
-  gac [options]
-  gac <path> <message>
+	You can specify which type of git files to match by using the ${B('--only')} and
+	${B('--except')} options. Git types must be ${B('deleted')}, ${B('modified')}, ${B('staged')}, or ${B('untracked')}
+	(${B('d')}, ${B('m')}, ${B('s')}, ${B('u')}), and separated by commas.
 
-${chalk.bold('OPTIONS')}
-  -c, --case-sensitive    Match files case-sensitively.
-  -h, --help              Display this help screen.
-  -i, --interactive       Interactively find and commit files.
 
-${chalk.bold('EXAMPLES')}
-  gac README.md "Add README"
-  gac ind "Modify index.js"
+${B('USAGE')}
+	gac [options]
+	gac [options] <path> <message>
+
+
+${B('OPTIONS')}
+	-c, --case-sensitive          Match files case-sensitively.
+	-e, --except=<type1,type2>    Specify which type of git files to ignore.
+	-h, --help                    Display this help screen.
+	-i, --interactive             Interactively find and commit files.
+	-o, --only=<type1,type2>      Specify which type of git files to look for.
+	-s, --silent                  Suppress success messages.
+
+
+${B('EXAMPLES')}
+	gac README "Add README" --case-sensitive
+	gac ind "Modify index.js"
+	gac --only modified,staged * "Commit all modified and staged files"
+	gac -e=d,u * "Commit all files that are not deleted or untracked"
 `
 
-execSync(`echo "${txt}" > ${outputFile}`)
+fs.writeFile(outputFile, text)

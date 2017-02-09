@@ -1,19 +1,31 @@
 [1mDESCRIPTION[22m
-  This command quickens the commit process for individual files. Files can be
-  added by giving globs, or substrings of the desired file. For example, the
-  glob ind would find all files that contain ind in them. Files will be
-  matched case-insensitively by default.
+	This command quickens the commit process for individual files. Files can be
+	added by providing a list of file globs. For example, [1m"src/**/*"[22m will match
+	all files of all subfolders of [1m"src/"[22m. If the given glob is a substring of
+	a filename, a match will always be made. By default, all matches are made
+	case-insensitively.
+
+	You can specify which type of git files to match by using the [1m--only[22m and
+	[1m--except[22m options. Git types must be [1mdeleted[22m, [1mmodified[22m, [1mstaged[22m, or [1muntracked[22m
+	([1md[22m, [1mm[22m, [1ms[22m, [1mu[22m), and separated by commas.
+
 
 [1mUSAGE[22m
-  gac [options]
-  gac <path> <message>
+	gac [options]
+	gac [options] <path> <message>
+
 
 [1mOPTIONS[22m
-  -c, --case-sensitive    Match files case-sensitively.
-  -h, --help              Display this help screen.
-  -i, --interactive       Interactively find and commit files.
+	-c, --case-sensitive          Match files case-sensitively.
+	-e, --except=<type1,type2>    Specify which type of git files to ignore.
+	-h, --help                    Display this help screen.
+	-i, --interactive             Interactively find and commit files.
+	-o, --only=<type1,type2>      Specify which type of git files to look for.
+	-s, --silent                  Suppress success messages.
+
 
 [1mEXAMPLES[22m
-  gac README.md Add README
-  gac ind Modify index.js
-
+	gac README "Add README" --case-sensitive
+	gac ind "Modify index.js"
+	gac --only modified,staged * "Commit all modified and staged files"
+	gac -e=d,u * "Commit all files that are not deleted or untracked"
