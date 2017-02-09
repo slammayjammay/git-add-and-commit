@@ -51,6 +51,11 @@ class GitAddAndCommit {
 			})
 
 			execSync(`git commit -m "${this.message}"`)
+
+			if (this.options.silent) {
+				return
+			}
+
 			console.log(`Commit successful.`)
 		}).catch(() => {
 			console.log(`Error encountered -- aborting.`)

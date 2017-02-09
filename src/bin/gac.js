@@ -11,7 +11,8 @@ const GitAddAndCommit = require(join(__dirname, '../'))
 let booleans = {
 	c: 'caseSensitive',
 	h: 'help',
-	i: 'interactive'
+	i: 'interactive',
+	s: 'silent'
 }
 let needArgs = {
 	e: 'except',
