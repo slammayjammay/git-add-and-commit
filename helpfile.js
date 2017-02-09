@@ -9,8 +9,8 @@ ${B('DESCRIPTION')}
 	This command quickens the commit process for individual files. Files can be
 	added by providing a list of file globs. For example, ${B('"src/**/*"')} will match
 	all files of all subfolders of ${B('"src/"')}. If the given glob is a substring of
-	a filename, a match will always be made. By default, all matches are made
-	case-insensitively.
+	a filename a match will always be made, unless the ${B('--silent')} option is given.
+	By default, all matches are made case-insensitively.
 
 	You can specify which type of git files to match by using the ${B('--only')} and
 	${B('--except')} options. Git types must be ${B('deleted')}, ${B('modified')}, ${B('staged')}, or ${B('untracked')}
@@ -29,6 +29,7 @@ ${B('OPTIONS')}
 	-i, --interactive             Interactively find and commit files.
 	-o, --only=<type1,type2>      Specify which type of git files to look for.
 	-s, --silent                  Suppress success messages.
+	-S, --strict                  Match files by only the exact glob given.
 
 
 ${B('EXAMPLES')}
