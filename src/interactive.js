@@ -53,13 +53,13 @@ class Interactive {
 		keypress.beginInput()
 
 		keypress.once('return', () => {
-			let answer = keypress.input()
+			let answer = keypress.input().toLowerCase()
 			jumper.erase()
 
-			if (['y', 'yes', 'Y', 'Yes'].includes(answer)) {
+			if (['y', 'yes'].includes(answer)) {
 				jumper.reset()
 				this.showGlobPrompt()
-			} else if (['n', 'no', 'N', 'No'].includes(answer)) {
+			} else if (['n', 'no'].includes(answer)) {
 				keypress.exit()
 			}
 		})
