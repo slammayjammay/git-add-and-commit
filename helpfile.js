@@ -33,7 +33,7 @@ ${B('OPTIONS')}
 
 ${B('EXAMPLES')}
 	gac README "Add README" --case-sensitive
-	gac ind "Modify index.js"
+	gac html js scss "Commit all html, js, and scss files"
 	gac --only modified,staged * "Commit all modified and staged files"
 	gac -e=d,u * "Commit all files that are not deleted or untracked"
 `
