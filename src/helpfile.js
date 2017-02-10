@@ -1,7 +1,8 @@
 const fs = require('fs')
+const join = require('path').join
 const chalk = require('chalk')
 
-const outputFile = 'help.txt'
+const outputFile = join(__dirname, '../help.txt')
 const B = (text) => chalk.bold(text)
 
 let text = `\

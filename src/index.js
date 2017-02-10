@@ -111,8 +111,8 @@ class GitAddAndCommit {
    */
 	showHelpScreen() {
 		let helpFile = join(__dirname, '../help.txt')
-		let helpScreen = execSync(`cat ${helpFile}`)
-		console.log(helpScreen.toString('utf8'))
+		let helpScreen = execSync(`cat ${helpFile}`).toString('utf8')
+		console.log(helpScreen)
 	}
 }
 
