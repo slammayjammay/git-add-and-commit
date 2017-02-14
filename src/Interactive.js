@@ -130,7 +130,9 @@ class Interactive {
       process.stdout.write(ansiEscapes.cursorBackward(1))
       process.stdout.write(' ')
 
+			jumper.find('enter').content(this.gitAddPrompt)
       this.jumpToEnter()
+
       process.stdout.write(glob)
 			this.showCursor()
 			this.fileIndex = 0
@@ -147,12 +149,18 @@ class Interactive {
 			return
 		}
 
-    // taken right out of the source, without the _refreshLine call
-    this.rl.line = this.rl.line.slice(0, this.rl.cursor - 1) +
-                this.rl.line.slice(this.rl.cursor, this.rl.line.length);
-    this.rl.cursor--;
-    // and then move backwards by one. not totally sure why
-    process.stdout.write(ansiEscapes.cursorBackward(1))
+		// the user just typed a tab. We don't want tabs to be printed. What to do?
+		// the _deleteLeft method works as a backspace, but _refreshLine is called.
+		// this is only bad for when the indicator is showing.
+
+		if (this.showingIndicator) {
+			// straight from the source, without _refreshLine()
+			this.rl.line = this.rl.line.slice(0, this.rl.cursor - 1) +
+										 this.rl.line.slice(this.rl.cursor, this.rl.line.length);
+			this.rl.cursor--;
+		} else {
+			this.rl._deleteLeft()
+		}
 
 		this.showingDiff = true
 
