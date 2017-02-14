@@ -20,8 +20,8 @@ class Interactive {
 		this.instructions = `${chalk.gray('Arrow keys to navigate')}\n${chalk.gray('Tab to show diff of selected file(s)')}`
 		this.gitAddPrompt = `${chalk.green('Enter a file glob: ')}`
 
-    this.render = debounce(this.render, 200)
-    this.onType = this.onType.bind(this)
+		this.render = debounce(this.render, 200)
+		this.onType = this.onType.bind(this)
 		this.onTab = this.onTab.bind(this)
 		this.onArrow = this.onArrow.bind(this)
 		this.exitBeforeAdd = this.exitBeforeAdd.bind(this)
@@ -80,9 +80,9 @@ class Interactive {
 		jumper.break()
 		jumper.block(chalk.green('Files found:'), 'found')
 
-    this.findGitFiles()
-    jumper.render()
-    this.jumpToEnter()
+		this.findGitFiles()
+		jumper.render()
+		this.jumpToEnter()
 
 		this.rl.input.on('keypress', this.onType)
 
@@ -94,54 +94,54 @@ class Interactive {
 		})
 	}
 
-  /**
-   * Wrapper for jumper.render(). Returns a promise when complete.
-   */
-  render(block) {
-    return new Promise(resolve => {
-      jumper.render(block)
-      resolve()
-    })
-  }
+	/**
+	 * Wrapper for jumper.render(). Returns a promise when complete.
+	 */
+	render(block) {
+		return new Promise(resolve => {
+			jumper.render(block)
+			resolve()
+		})
+	}
 
-  jumpToEnter() {
-    jumper.jumpTo('enter', -1)
-    this.rl.setPrompt(this.gitAddPrompt)
-  }
+	jumpToEnter() {
+		jumper.jumpTo('enter', -1)
+		this.rl.setPrompt(this.gitAddPrompt)
+	}
 
 	onType(char, key) {
 		if (key.name === 'tab') {
 			return this.onTab(char, key)
 		} else if (['up', 'down'].includes(key.name)) {
 			return this.onArrow(char, key)
-    } else if (['left', 'right'].includes(key.name)) {
-      return
+		} else if (['left', 'right'].includes(key.name)) {
+			return
 		} else if (key.name === 'return') {
-      // I guess the onType listener hasn't been removed yet
-      return
-    }
+			// I guess the onType listener hasn't been removed yet
+			return
+		}
 
-    let glob = this.rl.line
+		let glob = this.rl.line
 
-    // if the indicator is showing, jump to the enter prompt.
-    // this.onType is called after the letter is printed, so immediately
-    // "delete" it and then write it on the enter prompt
+		// if the indicator is showing, jump to the enter prompt.
+		// this.onType is called after the letter is printed, so immediately
+		// "delete" it and then write it on the enter prompt
 		if (this.showingIndicator) {
-      process.stdout.write(ansiEscapes.cursorBackward(1))
-      process.stdout.write(' ')
+			process.stdout.write(ansiEscapes.cursorBackward(1))
+			process.stdout.write(' ')
 
 			jumper.find('enter').content(this.gitAddPrompt)
-      this.jumpToEnter()
+			this.jumpToEnter()
 
-      process.stdout.write(glob)
+			process.stdout.write(glob)
 			this.showCursor()
 			this.fileIndex = 0
 			this.showingIndicator = false
 		}
 
-    jumper.find('enter').content(this.gitAddPrompt + glob)
-    this.findGitFiles(glob)
-    this.render('found').then(() => this.jumpToEnter())
+		jumper.find('enter').content(this.gitAddPrompt + glob)
+		this.findGitFiles(glob)
+		this.render('found').then(() => this.jumpToEnter())
 	}
 
 	onTab(char, key) {
@@ -188,7 +188,7 @@ class Interactive {
 			return
 		}
 
-    this.prevIndex = this.fileIndex
+		this.prevIndex = this.fileIndex
 
 		// go to the correct file based on input direction
 		if (!this.showingIndicator) {
@@ -200,21 +200,21 @@ class Interactive {
 			this.fileIndex += 1
 		}
 
-    // if the cursor is at the last file, return
-    if (this.fileIndex > numFiles - 1) {
-      this.fileIndex = numFiles - 1
-      return
-    }
+		// if the cursor is at the last file, return
+		if (this.fileIndex > numFiles - 1) {
+			this.fileIndex = numFiles - 1
+			return
+		}
 
-    let goToEnter = this.fileIndex < 0
-    this.fileIndex = Math.max(this.fileIndex, 0)
+		let goToEnter = this.fileIndex < 0
+		this.fileIndex = Math.max(this.fileIndex, 0)
 
-    // at this point the file indicator will change positions and the cursor
-    // right next to the printed indicator. So erase it.
-    jumper.jumpTo(`gitFile${this.prevIndex}`, -1)
-    process.stdout.write(ansiEscapes.eraseEndLine)
+		// at this point the file indicator will change positions and the cursor
+		// right next to the printed indicator. So erase it.
+		jumper.jumpTo(`gitFile${this.prevIndex}`, -1)
+		process.stdout.write(ansiEscapes.eraseEndLine)
 
-    // if the cursor is moving from the first file up to the prompt area, return
+		// if the cursor is moving from the first file up to the prompt area, return
 		if (goToEnter) {
 			this.fileIndex = 0
 			this.jumpToEnter()
@@ -223,7 +223,7 @@ class Interactive {
 			return
 		}
 
-    // otherwise, print the indicator at the new position
+		// otherwise, print the indicator at the new position
 		jumper.jumpTo(`gitFile${this.fileIndex}`, -1)
 		process.stdout.write(ansiEscapes.cursorForward(2))
 		process.stdout.write(chalk.bold.blue('⬅'))
@@ -266,14 +266,14 @@ class Interactive {
 		jumper.break()
 		jumper.block(chalk.green('Enter commit message: "'), 'commit')
 
-    // need to update readline's prompt for _refreshLine calls
-    this.rl.setPrompt(jumper.find('commit').text)
+		// need to update readline's prompt for _refreshLine calls
+		this.rl.setPrompt(jumper.find('commit').text)
 
 		this.render().then(() => {
-      jumper.jumpTo('commit', -1)
-      process.stdout.write(chalk.green('"'))
-      jumper.jumpTo('commit', -1)
-    })
+			jumper.jumpTo('commit', -1)
+			process.stdout.write(chalk.green('"'))
+			jumper.jumpTo('commit', -1)
+		})
 	}
 
 	startCommit() {
@@ -284,7 +284,7 @@ class Interactive {
 		this.rl.input.on('keypress', onKeypress)
 
 		this.rl.once('line', (line) => {
-      this.commitMessage = line
+			this.commitMessage = line
 
 			this.rl.input.removeListener('keypress', onKeypress)
 
@@ -301,7 +301,7 @@ class Interactive {
 	}
 
 	commit() {
-    process.removeListener('exit', this.exitAfterAdd)
+		process.removeListener('exit', this.exitAfterAdd)
 
 		for (let file of this.addFiles) {
 			execSync(`git add ${file}`)
