@@ -31,6 +31,7 @@ ${B('OPTIONS')}
 	-o, --only=<type1,type2>      Specify which type of git files to look for.
 	-s, --silent                  Suppress success messages.
 	-S, --strict                  Match files by only the exact glob given.
+	-v, --version                 Print the version of this module.
 
 
 ${B('EXAMPLES')}

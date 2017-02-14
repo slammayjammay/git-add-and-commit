@@ -13,7 +13,8 @@ let booleans = {
 	h: 'help',
 	i: 'interactive',
 	s: 'silent',
-	S: 'strict'
+	S: 'strict',
+	v: 'version'
 }
 let needArgs = {
 	e: 'except',

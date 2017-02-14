@@ -5,6 +5,7 @@ const gitFiles = require('git-files')
 const jumper = require('terminal-jumper')
 const Interactive = require('./Interactive')
 const utils = require('./utils')
+const pkg = require('../package.json')
 
 /**
  * Reads a file glob and a commit message, and commits to git.
@@ -15,13 +16,27 @@ class GitAddAndCommit {
 		this.options = options
 		this.args = args
 
+		if (options.help) {
+			this.showHelpScreen()
+			return
+		}
+
+		if (options.version) {
+			console.log(pkg.version)
+			return
+		}
+
 		if (options.interactive) {
 			new Interactive(options).run()
-		} else if (options.help || args.length === 0) {
-			this.showHelpScreen()
-		} else {
-			this.run()
+			return
 		}
+
+		if (args.length === 0) {
+			this.showHelpScreen()
+			return
+		}
+
+		this.run()
 	}
 
 	/**
