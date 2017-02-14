@@ -1,13 +1,14 @@
+const readline = require('readline')
 const execSync = require('child_process').execSync
 const chalk = require('chalk')
 const ansiEscapes = require('ansi-escapes')
-const debounce = require('lodash.debounce')
+const debounce = require('debounce-promise')
 const gitFiles = require('git-files')
 const gitDiffGlob = require('git-diff-glob')
-const keypress = require('terminal-keypress')
-const jumper = require('terminal-jumper')
+const jumper = require('../../terminal-jumper/src')
 const pager = require('node-pager')
 const utils = require('./utils')
+require('./utils/readline-hack')
 
 class Interactive {
 	constructor(options = {}) {
@@ -19,18 +20,25 @@ class Interactive {
 		this.instructions = `${chalk.gray('Arrow keys to navigate')}\n${chalk.gray('Tab to show diff of selected file(s)')}`
 		this.gitAddPrompt = `${chalk.green('Enter a file glob: ')}`
 
-		this.onType = debounce(this.onType.bind(this), 200)
+    this.render = debounce(this.render, 200)
+    this.onType = this.onType.bind(this)
 		this.onTab = this.onTab.bind(this)
 		this.onArrow = this.onArrow.bind(this)
 		this.exitBeforeAdd = this.exitBeforeAdd.bind(this)
 		this.exitAfterAdd = this.exitAfterAdd.bind(this)
 
-		keypress.init()
-		keypress.on('exit', () => this.showCursor())
-		keypress.on('exit', this.exitBeforeAdd)
+		process.on('exit', this.exitBeforeAdd)
 	}
 
 	run() {
+		readline.emitKeypressEvents(process.stdin)
+		this.rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout,
+			terminal: true,
+			prompt: this.gitAddPrompt
+		})
+
 		let stagedFiles = gitFiles.staged()
 
 		if (stagedFiles.length > 0) {
@@ -48,97 +56,121 @@ class Interactive {
 		jumper.break()
 		jumper.block(chalk.bold('These file(s) will be committed. Continue? (y/n) '), 'warning')
 
-		jumper.render()
+		this.render()
 		jumper.jumpTo('warning', -1)
-		keypress.beginInput()
 
-		keypress.once('return', () => {
-			let answer = keypress.input().toLowerCase()
+		this.rl.once('line', line => {
+			let answer = line.trim().toLowerCase()
 			jumper.erase()
 
 			if (['y', 'yes'].includes(answer)) {
 				jumper.reset()
 				this.showGlobPrompt()
-			} else if (['n', 'no'].includes(answer)) {
-				keypress.exit()
+			} else {
+				process.exit()
 			}
 		})
 	}
 
 	showGlobPrompt() {
-		// configure keypress
-		keypress.color(letter => chalk.red(letter))
-		keypress.disableBehavior('tab right left')
-
 		// show prompt and available files
 		jumper.block(this.instructions, 'instructions')
 		jumper.break()
 		jumper.block(this.gitAddPrompt, 'enter')
 		jumper.break()
 		jumper.block(chalk.green('Files found:'), 'found')
-		this.renderFoundGitFiles()
 
-		jumper.jumpTo('enter', -1)
-		keypress.beginInput()
+    this.findGitFiles()
+    jumper.render()
+    this.jumpToEnter()
 
-		keypress.on('keypress', this.onType)
-		keypress.on('tab', this.onTab)
-		keypress.on('arrow', this.onArrow)
+		this.rl.input.on('keypress', this.onType)
 
-		keypress.once('return', () => {
+		this.rl.once('line', line => {
 			this.showCursor()
-			keypress.removeListener('keypress', this.onType)
-			keypress.removeListener('tab', this.onTab)
-			this.renderAddSuccess()
+			this.rl.input.removeListener('keypress', this.onType)
+			this.renderAddSuccess(line)
 			this.startCommit()
 		})
 	}
 
-	onType(char, key) {
-		if (['left', 'right', 'up', 'down', 'tab', 'return'].includes(key.name)) {
-			return
-		}
+  /**
+   * Wrapper for jumper.render(). Returns a promise when complete.
+   */
+  render(block) {
+    return new Promise(resolve => {
+      jumper.render(block)
+      resolve()
+    })
+  }
 
+  jumpToEnter() {
+    jumper.jumpTo('enter', -1)
+    this.rl.setPrompt(this.gitAddPrompt)
+  }
+
+	onType(char, key) {
+		if (key.name === 'tab') {
+			return this.onTab(char, key)
+		} else if (['up', 'down'].includes(key.name)) {
+			return this.onArrow(char, key)
+    } else if (['left', 'right'].includes(key.name)) {
+      return
+		} else if (key.name === 'return') {
+      // I guess the onType listener hasn't been removed yet
+      return
+    }
+
+    let glob = this.rl.line
+
+    // if the indicator is showing, jump to the enter prompt.
+    // this.onType is called after the letter is printed, so immediately
+    // "delete" it and then write it on the enter prompt
 		if (this.showingIndicator) {
+      process.stdout.write(ansiEscapes.cursorBackward(1))
+      process.stdout.write(' ')
+
+      this.jumpToEnter()
+      process.stdout.write(glob)
 			this.showCursor()
 			this.fileIndex = 0
 			this.showingIndicator = false
 		}
 
-		let glob = keypress.input()
-		let coloredInput = keypress.input(true)
-		jumper.find('enter').content(this.gitAddPrompt + coloredInput)
-
-		this.renderFoundGitFiles(glob)
-		jumper.jumpTo('enter', -1)
+    jumper.find('enter').content(this.gitAddPrompt + glob)
+    this.findGitFiles(glob)
+    this.render('found').then(() => this.jumpToEnter())
 	}
 
-	onTab() {
+	onTab(char, key) {
 		if (this.showingDiff) {
 			return
 		}
 
+    // taken right out of the source, without the _refreshLine call
+    this.rl.line = this.rl.line.slice(0, this.rl.cursor - 1) +
+                this.rl.line.slice(this.rl.cursor, this.rl.line.length);
+    this.rl.cursor--;
+    // and then move backwards by one. not totally sure why
+    process.stdout.write(ansiEscapes.cursorBackward(1))
+
 		this.showingDiff = true
 
-		let file = this.showingIndicator ? this.getIndicatedFile() : keypress.input()
+		let file = this.showingIndicator ? this.getIndicatedFile() : this.rl.line
 		let diff = gitDiffGlob(file, {
 			caseSensitive: this.options.caseSensitive
 		})
-		let pagerExitFn = () => this.showingDiff = false
 
-		pager(diff).then(pagerExitFn)
+		pager(diff).then(() => this.showingDiff = false)
 	}
 
-	onArrow(dir) {
-		if (['left', 'right'].includes(dir)) {
-			return
-		}
-		if (!this.showingIndicator && dir === 'up') {
+	onArrow(char, key) {
+		if (!this.showingIndicator && key.name === 'up') {
 			return
 		}
 
 		let files = utils.getUniqueFilesOfTypes(this.options.find)
-		let matches = utils.matchGlobsAgainstFiles(files, ['*'], {
+		let matches = utils.matchGlobsAgainstFiles(files, [this.rl.line], {
 			caseSensitive: this.options.caseSensitive,
 			strict: this.options.strict
 		})
@@ -148,34 +180,42 @@ class Interactive {
 			return
 		}
 
+    this.prevIndex = this.fileIndex
+
 		// go to the correct file based on input direction
 		if (!this.showingIndicator) {
 			this.fileIndex = 0
 			this.hideCursor()
-		} else if (dir === 'up') {
+		} else if (key.name === 'up') {
 			this.fileIndex -= 1
-		} else if (dir === 'down') {
+		} else if (key.name === 'down') {
 			this.fileIndex += 1
 		}
 
-		// return if the index is lower than 0 or greater than the number of files
-		if (this.fileIndex < 0) {
+    // if the cursor is at the last file, return
+    if (this.fileIndex > numFiles - 1) {
+      this.fileIndex = numFiles - 1
+      return
+    }
+
+    let goToEnter = this.fileIndex < 0
+    this.fileIndex = Math.max(this.fileIndex, 0)
+
+    // at this point the file indicator will change positions and the cursor
+    // right next to the printed indicator. So erase it.
+    jumper.jumpTo(`gitFile${this.prevIndex}`, -1)
+    process.stdout.write(ansiEscapes.eraseEndLine)
+
+    // if the cursor is moving from the first file up to the prompt area, return
+		if (goToEnter) {
 			this.fileIndex = 0
-			jumper.render()
-			jumper.jumpTo('enter', -1)
+			this.jumpToEnter()
 			this.showCursor()
 			this.showingIndicator = false
 			return
 		}
-		if (this.fileIndex > numFiles - 1) {
-			this.fileIndex = numFiles - 1
-			return
-		}
 
-		// erase any previously printed indicators
-		jumper.render()
-
-		// write a file indicator on the current file line
+    // otherwise, print the indicator at the new position
 		jumper.jumpTo(`gitFile${this.fileIndex}`, -1)
 		process.stdout.write(ansiEscapes.cursorForward(2))
 		process.stdout.write(chalk.bold.blue('⬅'))
@@ -196,14 +236,13 @@ class Interactive {
 		return currentLine.trim().split(' ')[1]
 	}
 
-	renderAddSuccess() {
+	renderAddSuccess(line) {
 		// if the indicator is showing, only add that specific file.
 		// otherwise, add all files matching the given glob
 		if (this.showingIndicator) {
 			this.addFiles = [this.getIndicatedFile()]
 		} else {
-			let glob = keypress.input()
-			this.addFiles = this.getGitFilesMatching(glob)
+			this.addFiles = this.getGitFilesMatching(line)
 		}
 
 		jumper.reset()
@@ -218,48 +257,52 @@ class Interactive {
 		jumper.block('---------------------------------------------')
 		jumper.break()
 		jumper.block(chalk.green('Enter commit message: "'), 'commit')
-		jumper.render()
 
-		jumper.jumpTo('commit', -1)
-		process.stdout.write(chalk.green('"'))
-		jumper.jumpTo('commit', -1)
+    // need to update readline's prompt for _refreshLine calls
+    this.rl.setPrompt(jumper.find('commit').text)
+
+		this.render().then(() => {
+      jumper.jumpTo('commit', -1)
+      process.stdout.write(chalk.green('"'))
+      jumper.jumpTo('commit', -1)
+    })
 	}
 
 	startCommit() {
-		keypress.color(letter => chalk.green(letter))
-		keypress.beginInput()
-
 		let onKeypress = () => {
 			process.stdout.write(`${chalk.green('"')}`)
 			process.stdout.write(ansiEscapes.cursorBackward(1))
 		}
-		keypress.on('keypress', onKeypress)
+		this.rl.input.on('keypress', onKeypress)
 
-		keypress.once('return', () => {
-			keypress.removeListener('keypress', onKeypress)
-			this.commitMessage = keypress.input()
+		this.rl.once('line', (line) => {
+      this.commitMessage = line
+
+			this.rl.input.removeListener('keypress', onKeypress)
 
 			let content = jumper.find('commit').text
-			content = `${content}${keypress.input(true)}${chalk.green('"')}`
+			content = `${content}${chalk.green(this.commitMessage)}${chalk.green('"')}`
 			jumper.find('commit').content(content)
+
 			this.commit()
 			this.complete()
 		})
 
-		keypress.removeListener('exit', this.exitBeforeAdd)
-		keypress.on('exit', this.exitAfterAdd)
+		process.removeListener('exit', this.exitBeforeAdd)
+		process.on('exit', this.exitAfterAdd)
 	}
 
 	commit() {
+    process.removeListener('exit', this.exitAfterAdd)
+
 		for (let file of this.addFiles) {
 			execSync(`git add ${file}`)
 		}
 		execSync(`git commit -m "${this.commitMessage}"`)
-
-		keypress.removeListener('exit', this.exitAfterAdd)
 	}
 
 	complete() {
+
 		if (this.options.silent) {
 			jumper.erase()
 		} else {
@@ -270,7 +313,7 @@ class Interactive {
 			jumper.render()
 		}
 
-		keypress.exit()
+		process.exit()
 	}
 
 	/**
@@ -278,7 +321,7 @@ class Interactive {
 	 * along with their git file type, e.g. 'staged', 'modified', etc.
 	 * @param {string} [glob] - The glob to match against files.
 	 */
-	renderFoundGitFiles(glob) {
+	findGitFiles(glob) {
 		glob = glob || '*'
 
 		// remove previous search
@@ -300,8 +343,6 @@ class Interactive {
 				counter += 1
 			}
 		}
-
-		jumper.render()
 	}
 
 	getGitFilesMatching(glob) {
