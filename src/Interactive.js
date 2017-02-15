@@ -177,14 +177,8 @@ class Interactive {
 			return
 		}
 
-		let files = utils.getUniqueFilesOfTypes(this.options.find)
-		let matches = utils.matchGlobsAgainstFiles(files, [this.rl.line], {
-			caseSensitive: this.options.caseSensitive,
-			strict: this.options.strict
-		})
-		let numFiles = matches.length
-
-		if (numFiles < 2) {
+		// this is calculated after every keystroke
+		if (this.numFiles < 2) {
 			return
 		}
 
@@ -201,8 +195,8 @@ class Interactive {
 		}
 
 		// if the cursor is at the last file, return
-		if (this.fileIndex > numFiles - 1) {
-			this.fileIndex = numFiles - 1
+		if (this.fileIndex > this.numFiles - 1) {
+			this.fileIndex = this.numFiles - 1
 			return
 		}
 
@@ -351,6 +345,10 @@ class Interactive {
 				counter += 1
 			}
 		}
+
+		// cache the number of results here, instead of calculating them on every
+		// arrow keystroke
+		this.numFiles = counter
 	}
 
 	getGitFilesMatching(glob) {
