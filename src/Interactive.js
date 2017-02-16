@@ -36,7 +36,8 @@ class Interactive {
 			input: process.stdin,
 			output: process.stdout,
 			terminal: true,
-			prompt: this.gitAddPrompt
+			prompt: this.gitAddPrompt,
+			historySize: 0
 		})
 
 		let stagedFiles = gitFiles.staged()
