@@ -20,7 +20,9 @@ class Interactive {
 		this.instructions = `${chalk.gray('Arrow keys to navigate')}\n${chalk.gray('Tab to show diff of selected file(s)')}`
 		this.gitAddPrompt = `${chalk.green('Enter a file glob: ')}`
 
-		this.render = debounce(this.render, 200)
+		this.render = debounce(this.render.bind(this), 200)
+		this.findGitFiles = debounce(this.findGitFiles.bind(this), 200)
+
 		this.onType = this.onType.bind(this)
 		this.onTab = this.onTab.bind(this)
 		this.onArrow = this.onArrow.bind(this)
@@ -83,17 +85,18 @@ class Interactive {
 		jumper.break()
 		jumper.block(chalk.green('Files found:'), 'found')
 
-		this.findGitFiles()
-		jumper.render()
-		this.jumpToEnter()
+		this.findGitFiles().then(() => {
+			jumper.render()
+			this.jumpToEnter()
 
-		this.rl.input.on('keypress', this.onType)
+			this.rl.input.on('keypress', this.onType)
 
-		this.rl.once('line', line => {
-			this.showCursor()
-			this.rl.input.removeListener('keypress', this.onType)
-			this.renderAddSuccess(line)
-			this.startCommit()
+			this.rl.once('line', line => {
+				this.showCursor()
+				this.rl.input.removeListener('keypress', this.onType)
+				this.renderAddSuccess(line)
+				this.startCommit()
+			})
 		})
 	}
 
@@ -144,7 +147,8 @@ class Interactive {
 
 		jumper.find('enter').content(this.gitAddPrompt + glob)
 		this.findGitFiles(glob)
-		this.render('found').then(() => this.jumpToEnter())
+			.then(() => this.render('found'))
+			.then(() => this.jumpToEnter())
 	}
 
 	onTab(char, key) {
@@ -352,6 +356,8 @@ class Interactive {
 		// cache the number of results here, instead of calculating them on every
 		// arrow keystroke
 		this.numFiles = counter
+
+		return Promise.resolve()
 	}
 
 	getGitFilesMatching(glob) {
