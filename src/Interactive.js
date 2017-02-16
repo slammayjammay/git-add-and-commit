@@ -36,7 +36,7 @@ class Interactive {
 			input: process.stdin,
 			output: process.stdout,
 			terminal: true,
-			prompt: this.gitAddPrompt,
+			prompt: '',
 			historySize: 0
 		})
 
@@ -74,6 +74,8 @@ class Interactive {
 	}
 
 	showGlobPrompt() {
+		this.rl.setPrompt(this.gitAddPrompt)
+
 		// show prompt and available files
 		jumper.block(this.instructions, 'instructions')
 		jumper.break()
