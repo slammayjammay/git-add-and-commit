@@ -25,10 +25,10 @@ ${B('USAGE')}
 
 ${B('OPTIONS')}
 	-c, --case-sensitive          Match files case-sensitively.
-	-e, --except=<type1,type2>    Specify which type of git files to ignore.
+	-e, --except=[type...]        Specify which type of git files to ignore.
 	-h, --help                    Display this help screen.
 	-i, --interactive             Interactively find and commit files.
-	-o, --only=<type1,type2>      Specify which type of git files to look for.
+	-o, --only=[type...]          Specify which type of git files to look for.
 	-s, --silent                  Suppress success messages.
 	-S, --strict                  Match files by only the exact glob given.
 	-v, --version                 Print the version of this module.
