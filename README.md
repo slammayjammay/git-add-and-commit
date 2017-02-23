@@ -36,7 +36,7 @@ DESCRIPTION
 	This command quickens the commit process for individual files. Files can be
 	added by providing a list of file globs. For example, "src/**/*" will match
 	all files of all subfolders of "src/". If the given glob is a substring of
-	a filename a match will always be made, unless the --silent option is given.
+	a filename a match will always be made, unless the --strict option is given.
 	By default, all matches are made case-insensitively.
 
 	You can specify which type of git files to match by using the --only and

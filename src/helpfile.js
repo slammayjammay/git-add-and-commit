@@ -10,7 +10,7 @@ ${B('DESCRIPTION')}
 	This command quickens the commit process for individual files. Files can be
 	added by providing a list of file globs. For example, ${B('"src/**/*"')} will match
 	all files of all subfolders of ${B('"src/"')}. If the given glob is a substring of
-	a filename a match will always be made, unless the ${B('--silent')} option is given.
+	a filename a match will always be made, unless the ${B('--strict')} option is given.
 	By default, all matches are made case-insensitively.
 
 	You can specify which type of git files to match by using the ${B('--only')} and
