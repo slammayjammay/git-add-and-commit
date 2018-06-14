@@ -28,7 +28,7 @@
     "minimist": "^1.2.0",
     "node-pager": "^0.3.0",
     "strip-ansi": "^3.0.1",
-    "terminal-jumper": "^0.4.1"
+    "terminal-jumper": "^0.4.2"
   },
   "keywords": [
     "git",
